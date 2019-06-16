@@ -1,0 +1,15 @@
+UNTAP = "untap"
+
+TAP = "tap"
+
+
+
+INIT_DRAW = 7
+
+# phase
+UPKEEP = "upkeep"
+DRAW = "draw"
+MAIN1 = "main1"
+ATTACK = "attack"
+BLOCK = "block"
+DAMAGE = "damage"

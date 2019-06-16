@@ -1,0 +1,66 @@
+from settings import *
+from fields import *
+from cards import *
+
+class Player():
+    def __init__(self, deck):
+        self.life = 20
+        self.library = Library(deck)
+        np.random.shuffle(self.library)
+        
+        self.battlefield = BattleField()
+        self.graveyard = Graveyard()
+        self.exiled = Exiled()
+
+    def init_draw(self, n):
+        self.hand = Hand(self.library.pop_top(n))
+
+    def draw(self, n):
+        drawed = self.library.pop_top(n)
+        if len(drawed) > 0:
+            hand.extend(drawed)
+        else:
+            assert "you lose"
+
+    def damaged(self, n):
+        self.life -= n
+
+    def cast_from_hand(self, card):
+        self.hand.remove(card)
+        tmp = str(type(card))
+        
+        if "Land" in tmp:
+            self.battlefield.lands.append(card)
+        else:
+            self.battlefield.use_mana(card.cost)
+            self.battlefield.creatures.append(card)
+
+    def _discard(self, card):
+        self.hand.remove(card)
+        self.graveyard.append(card)
+
+    def _attack(self, creatures, b_ctrl):
+        b_ctrl.add_attackers(creatures)
+
+    def command(self, game):
+        priority = 0
+        if game.is_main():
+            priority = self._cast_command(self, game)
+        elif game.phase == ATTACK:
+            priority = self._attack_command(self, game)
+        elif game.pahse == BLOCK:
+            priority = self._block_commnad(self, game)
+
+        return priority
+
+    def _cast_command(self, game):
+        pass
+
+    def _attack_command(self, game):
+        pass
+
+    def _block_command(self, game):
+        pass
+
+        
+        

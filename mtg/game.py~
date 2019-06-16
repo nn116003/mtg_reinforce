@@ -1,0 +1,59 @@
+from settings import *
+from battle import *
+
+
+class Game():
+    def __init__(self, players):
+        self.players = players
+        self.phase = None
+        self.battle_ctrl = BattleController()
+        
+        self.playing_idx = 0
+
+        self._init_draw()
+
+    def _init_draw(self):
+        [player.init_draw(INIT_DRAW) player in self.players]
+
+    def _burial_corpses(self, player):
+        creatures = player.battlefield.creatures:
+        for creature in creatures:
+            
+
+    def _turn(self):
+        player = self.players[self.playing_idx]
+        opponent = self.players[1 - self.playing_idx]
+        
+        # upkeep
+        self.phase = UPKEEP
+        player.battlefield.untap_all()
+
+        # draw
+        self.phase = DRAW
+        player.draw(1)
+
+        # main1
+        self.phase = MAIN
+        while True:
+            if player.command(self) == 0:
+                break
+            # there is no instant card yet,
+
+        # battle
+        self.phase = ATTACK
+        player.command(self)
+
+        self.phase = BLOCK
+        opponent.command(self)
+
+        self.phase = DAMAGE
+        damages2opponent = self.battle_ctrl.exec_damages(self)
+        total_damage = sum([x[1] for x in damages2opponent)
+        opponent.damaged(total_damage)
+
+        # main2
+
+        # end
+        
+
+        
