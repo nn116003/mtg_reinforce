@@ -11,7 +11,7 @@ class Game():
         self.playing_idx = 0
 
     def _init_draw(self):
-        [player.init_draw(INIT_DRAW) player in self.players]
+        [player.init_draw(INIT_DRAW) for player in self.players]
 
     def _burial_corpses(self, player):
         dead_creatures = [creature for

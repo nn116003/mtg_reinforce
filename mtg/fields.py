@@ -24,20 +24,20 @@ class BattleField():
         self.manapool = Manapool()
 
     def untap_all(self):
-        [land.untap() for self.lands if land.is_tapped()]
-        [creature.untap() for self.creatures if creature.is_tapped()]
+        [land.untap() for land in self.lands if land.is_tapped()]
+        [creature.untap() for creature in self.creatures if creature.is_tapped()]
 
     def get_untap_lands(self):
-        return [land for self.lands if not land.is_tapped()]
+        return [land for land in self.lands if not land.is_tapped()]
 
     def get_untap_creatures(self):
-        return [creature for self.creatures if not creature.is_tapped()]
+        return [creature for creature in self.creatures if not creature.is_tapped()]
 
     def mana_available(self):
         return len(self.get_untap_lands) + self.manapool.mana
 
     def _add_mana_to_pool(self, n):
-        usable_lands = self.get_untap_lands
+        usable_lands = self.get_untap_lands()
         if n > len(usable_lands):
             assert "you cant make mana"
         else:
@@ -73,10 +73,10 @@ class Library(list):
 class Hand(list):
 
     def playable(self, game, player):
-        return [card in self if card.is_playable(game, player)]
+        return [card for card in self if card.is_playable(game, player)]
 
     def lands(self):
-        return [card in self if "Land" in str(type(card))]
+        return [card for card in self if "Land" in str(type(card))]
 
 class Graveyard(list):
     pass
