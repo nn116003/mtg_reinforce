@@ -6,8 +6,14 @@ class Card():
         self.name = name
         self.id = id
 
+        # id for individual card in game
+        self.tmp_id = 0
+
     def is_playable(self, game, player):
         pass
+
+    def log_str(self):
+        return "%d_%d" % (self.tmp_id, self.id)
 
 class Permanent(Card):
     def __init__(self, id, name):

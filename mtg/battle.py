@@ -21,6 +21,38 @@ class BattleController():
         for battle, blockers in zip(self.battles, blocker_list):
             battle['blockers'] = blockers
         
+    def log_str_ab(self):
+        ab_list = []
+        for battle in self.battles:
+            ac = battle['attacker']
+            bcs = battle['blockers']
+            ab_list.append(
+                "A:%s B:%s" % (
+                    ac.log_str(),
+                    "+".join([bs.log_str() for bs in bcs ])
+                    )
+            )
+        
+        return '|'.join(ab_list)
+
+    def log_str_abd(self):
+        abd_list = []
+        for battle in self.battles:
+            ac = battle['attacker']
+            bcs = battle['blockers']
+            ds = battle['a2b']
+            a2b_str = "+".join([
+                "%sD%d" % (bc.log_str(), d) 
+                for bc,d   in zip(bcs, ds) ])
+            abd_list.append(
+                "A:%s B:%s" % (
+                    ac.log_str(),
+                    a2b_str
+                    )
+            )
+        
+        return '|'.join(abd_list)
+
 
     #def assign_damages(self, damage_list):
     #    # damage_list[i] is for self.battles[i]['attacker']

@@ -1,10 +1,12 @@
 from mtg.settings import *
 from mtg.battle import *
-
+from mtg.utils import assign_ids_in_game
 
 class Game():
     def __init__(self, players):
         self.players = players
+        assign_ids_in_game(players[0].library, players[1].library) 
+
         self.phase = None
         self.battle_ctrl = BattleController()
         
@@ -89,6 +91,7 @@ class Game():
         
 
     def main(self):
+        [player.shuffle() for player in self.players]
         self._init_draw()
 
         nturn = 0

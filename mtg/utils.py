@@ -3,7 +3,7 @@ from mtg.settings import DECK_NUM
 import pandas as pd 
 import numpy as np 
 
-def random_creatures_from_list(n, path):
+def _random_creatures_from_list(n, path):
     card_list = pd.read_csv(path)
     l = card_list.shape[0]
     tmp_idxes = np.arange(l*4)
@@ -19,9 +19,21 @@ def random_creatures_from_list(n, path):
     return creature_list
 
 def random_deck_from_list(creature_num, path):
-    creatures = random_creatures_from_list(creature_num, path)
-    lands = [Land(i, 'land') for i in range(DECK_NUM - creature_num)]
+    creatures = _random_creatures_from_list(creature_num, path)
+    lands = [Land(99, 'land') for i in range(DECK_NUM - creature_num)]
     return creatures + lands
+
+
+def assign_ids_in_game(deck1, deck2):
+    for i, card in enumerate(deck1):
+        card.tmp_id = i
+
+    l = len(deck1)
+    for j, card in enumerate(deck2):
+        card.tmp_id = l + j
+
+
+
 
 
 

@@ -78,6 +78,10 @@ class Hand(list):
     def lands(self):
         return [card for card in self if "Land" in str(type(card))]
 
+    def log_str(self):
+        card_str = [card.log_str() for card in self]
+        return "-".join(card_str)
+
 class Graveyard(list):
     pass
 
