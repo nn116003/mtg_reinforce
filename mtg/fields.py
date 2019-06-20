@@ -1,4 +1,4 @@
-from settings import *
+from mtg.settings import *
 
 
 class Manapool():
@@ -34,25 +34,25 @@ class BattleField():
         return [creature for creature in self.creatures if not creature.is_tapped()]
 
     def mana_available(self):
-        return len(self.get_untap_lands) + self.manapool.mana
+        return len(self.get_untap_lands()) + self.manapool.mana
 
     def _add_mana_to_pool(self, n):
         usable_lands = self.get_untap_lands()
         if n > len(usable_lands):
-            assert "you cant make mana"
+            raise Exception("you cant make mana")
         else:
             for land in usable_lands[:n]:
                 land.add_mana(self.manapool)
 
     def _use_mana_from_pool(self, n):
         if n > self.manapool.mana:
-            assert "you are using too many mana"
+            raise Exception("you are using too many mana")
         else:
             self.manapool.use(n)
 
     def use_mana(self, n):
-        if self.mana_available(self) < n:
-            assert "you cant cat this card"
+        if self.mana_available() < n:
+            raise Exception("you cant cast this card")
         else:
             tmp = self.manapool.mana - n
             if tmp < 0:

@@ -1,4 +1,4 @@
-from settings import *
+from mtg.settings import *
 
 
 class Card():
@@ -45,7 +45,7 @@ class Land(Permanent):
             return False
 
     def add_mana(self, manapool):
-        if not self.is_tapped:
+        if not self.is_tapped():
             self.tap()
             manapool.add(1)
             return 1
@@ -63,9 +63,9 @@ class Creature(Permanent):
 
 
     def is_playable(self, game, player):
-        if game.is_turn(players) \
+        if game.is_turn(player) \
            and game.is_main() \
-           and player.mana_available <= self.cost:
+           and (player.mana_available() >= self.cost):
             return True
         else:
             return False

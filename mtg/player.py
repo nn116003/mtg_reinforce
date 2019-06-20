@@ -1,13 +1,13 @@
-from settings import *
-from fields import *
-from cards import *
+from mtg.settings import *
+from mtg.fields import *
+from mtg.cards import *
 import numpy as np
 
 class Player():
     def __init__(self, deck):
         self.life = LIFE
         self.library = Library(deck)
-        np.random.shuffle(self.library)
+        self.shuffle()
         
         self.battlefield = BattleField()
         self.graveyard = Graveyard()
@@ -15,6 +15,9 @@ class Player():
 
         self.n_playable_lands = LANDS_PLAYABLE
         self.n_played_lands = 0
+
+    def shuffle(self):
+        np.random.shuffle(self.library)
 
     def mana_available(self):
         return self.battlefield.mana_available()
@@ -27,12 +30,12 @@ class Player():
         if len(drawed) > 0:
             self.hand.extend(drawed)
         else:
-            assert "LO"
+            raise Exception("LO")
 
     def damaged(self, n):
         self.life -= n
         if self.life <= 0:
-            assert "you dead"
+            raise Exception("you dead")
 
     def _cast_from_hand(self, card):
         self.hand.remove(card)
@@ -45,7 +48,7 @@ class Player():
             self.battlefield.use_mana(card.cost)
             self.battlefield.creatures.append(card)
 
-    def reset_in_game(self):
+    def end_turn(self):
         self.n_played_lands = 0
 
     def _discard(self, card):
@@ -95,14 +98,14 @@ class Player():
         return 0
 
     def assign_damages_command(self, game):
-        damage_list = self._assign_damages(game.battle_ctrl.battles, game)
+        #damage_list = self._assign_damages(game.battle_ctrl.battles, game)
         for battle in game.battle_ctrl.battles:
             battle['a2b'] = self._assign_damage(battle['attacker'],
-                                                battle['blockers'])
+                                                battle['blockers'], game)
         return 0
 
 
-def Stupid_Player(Player):
+class Stupid_Player(Player):
     def _pick_cast_card(self, game):
 
         if np.random.uniform() > 0.3:
@@ -140,6 +143,8 @@ def Stupid_Player(Player):
         
         block_list = [[]] * len(attackers)
         block_list[0].extend(block_creatures)
+
+        return block_list
 
 
             

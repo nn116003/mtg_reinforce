@@ -1,5 +1,5 @@
-from settings import *
-from battle import *
+from mtg.settings import *
+from mtg.battle import *
 
 
 class Game():
@@ -8,7 +8,8 @@ class Game():
         self.phase = None
         self.battle_ctrl = BattleController()
         
-        self.playing_idx = 0
+        self.playing_idx = 0 # players[0] plays first
+
 
     def _init_draw(self):
         [player.init_draw(INIT_DRAW) for player in self.players]
@@ -27,8 +28,8 @@ class Game():
 
     def _end_turn(self):
         self._reset_damages()
-        player.reset_in_game()
-        opponent.reset_in_game()
+        [player.end_turn() for player in self.players]
+        
 
     def is_turn(self, player):
         return self.players[self.playing_idx] == player
@@ -63,11 +64,11 @@ class Game():
         self.phase = BLOCK
         opponent.block_command(self)
 
-        self.phase = SELECT
-        player.assign_danages_command(self)
+        self.phase = ASSIGN
+        player.assign_damages_command(self)
 
         self.phase = DAMAGE
-        damages2opponent = self.battle_ctrl.exec_damages(self)
+        damages2opponent = self.battle_ctrl.exec_damages()
         total_damage = sum([x[1] for x in damages2opponent])
         opponent.damaged(total_damage)
 
@@ -90,10 +91,12 @@ class Game():
     def main(self):
         self._init_draw()
 
-        n_turn = 0
+        nturn = 0
         while True:
             self._turn(draw = nturn>0 )
+            #print(nturn, len(self.players[0].library))
             self.playing_idx = 1 - self.playing_idx
+            nturn += 1
         
         
 

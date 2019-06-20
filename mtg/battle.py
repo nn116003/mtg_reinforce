@@ -1,5 +1,5 @@
-from settings import *
-from cards import *
+from mtg.settings import *
+from mtg.cards import *
 
 class BattleController():
     def __init__(self):
@@ -17,6 +17,7 @@ class BattleController():
         
     def add_blockers(self, blocker_list):
         # blocker_list[i] blocks self.battles[i]['attacker']
+        
         for battle, blockers in zip(self.battles, blocker_list):
             battle['blockers'] = blockers
         
@@ -32,14 +33,15 @@ class BattleController():
         
         for battle in self.battles:
             if len(battle['blockers']) > 0:
-                battle.attacker.damaged(
+                battle['attacker'].damaged(
                     sum([c.power for c in battle['blockers']])
                 )
-                for c,d in zip(battle.blockers, battle.a2b):
+                for c,d in zip(battle['blockers'], battle['a2b']):
                     c.damaged(d)
             else:
-                damages2players.append((battle.attacker,
-                                        battle.attacker.power))
+                
+                damages2players.append((battle['attacker'],
+                                        battle['attacker'].power))
 
         return damages2players
             
