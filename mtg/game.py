@@ -1,9 +1,10 @@
 from mtg.settings import *
 from mtg.battle import *
 from mtg.utils import assign_ids_in_game
+import logging 
 
 class Game():
-    def __init__(self, players):
+    def __init__(self, players, logging=logging ):
         self.players = players
         assign_ids_in_game(players[0].library, players[1].library) 
 
@@ -12,6 +13,13 @@ class Game():
         
         self.playing_idx = 0 # players[0] plays first
 
+        self.logger = logging 
+        
+        self.n_turn = 0
+
+    def log_info(self, mes):
+        self.logger.info("Turn_%d P_%d " % 
+                            (self.n_turn, self.playing_idx+1) + mes)
 
     def _init_draw(self):
         [player.init_draw(INIT_DRAW) for player in self.players]
@@ -39,37 +47,51 @@ class Game():
     def is_main(self):
         return (self.phase in (MAIN1, MAIN2))
             
+    def set_phase(self, phase, show_bf=True ):
+        self.phase = phase 
+        self.log_info("Phase:" + self.phase)
 
-    def _turn(self, draw=True):
+        if show_bf:
+            self.log_info("Player_1 BattleField:%s" 
+                        % self.players[0].battlefield.log_str() )
+            self.log_info("Player_2 BattleField:%s" 
+                        % self.players[1].battlefield.log_str() )
+
+    def _turn(self):
+        self.log_info("start ##############################")
         player = self.players[self.playing_idx]
         opponent = self.players[1 - self.playing_idx]
         
+        # fix summon sick
+        player.battlefield.fix_summon_sick()
+
         # upkeep
-        self.phase = UPKEEP
+        self.set_phase(UPKEEP)
         player.battlefield.untap_all()
 
         # draw
-        self.phase = DRAW
-        player.draw(1)
+        self.set_phase(DRAW)
+        if self.n_turn > 0:
+            player.draw(1)
 
         # main1
-        self.phase = MAIN1
+        self.set_phase(MAIN1)
         while True:
             if player.cast_command(self) == 0:
                 break
             # there is no instant card yet,
 
         # battle
-        self.phase = ATTACK
+        self.set_phase(ATTACK)
         player.attack_command(self)
 
-        self.phase = BLOCK
+        self.set_phase(BLOCK)
         opponent.block_command(self)
 
-        self.phase = ASSIGN
+        self.set_phase(ASSIGN, show_bf=False)
         player.assign_damages_command(self)
 
-        self.phase = DAMAGE
+        self.set_phase(DAMAGE, show_bf=False)
         damages2opponent = self.battle_ctrl.exec_damages()
         total_damage = sum([x[1] for x in damages2opponent])
         opponent.damaged(total_damage)
@@ -80,7 +102,7 @@ class Game():
         self.battle_ctrl.reset()
 
         # main2
-        self.phase = MAIN2
+        self.set_phase(MAIN2)
         while True:
             if player.cast_command(self) == 0:
                 break
@@ -88,18 +110,21 @@ class Game():
 
         # end
         self._end_turn()
+        self.n_turn += 1
         
 
     def main(self):
         [player.shuffle() for player in self.players]
         self._init_draw()
 
-        nturn = 0
-        while True:
-            self._turn(draw = nturn>0 )
-            #print(nturn, len(self.players[0].library))
-            self.playing_idx = 1 - self.playing_idx
-            nturn += 1
+        try:    
+            nturn = 0
+            while True:
+                self._turn()
+                self.playing_idx = 1 - self.playing_idx
+                nturn += 1
+        except Exception as e:
+            print(e)
         
         
 

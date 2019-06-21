@@ -23,15 +23,28 @@ class BattleField():
         self.creatures = []
         self.manapool = Manapool()
 
+    def log_str(self):
+        n_lands = len(self.lands)
+        n_untap_lands = len(self.get_untap_lands())
+        c_s = "|".join([card.log_str() for card in self.creatures ])
+        return "Lands:T%d|U%d Creatures:%s" % (n_lands - n_untap_lands, n_untap_lands,
+                                                c_s)
+
     def untap_all(self):
         [land.untap() for land in self.lands if land.is_tapped()]
         [creature.untap() for creature in self.creatures if creature.is_tapped()]
+
+    def fix_summon_sick(self):
+        [creature.fix_summon_sick() for creature in self.creatures]
 
     def get_untap_lands(self):
         return [land for land in self.lands if not land.is_tapped()]
 
     def get_untap_creatures(self):
         return [creature for creature in self.creatures if not creature.is_tapped()]
+
+    def get_attackable_creatures(self):
+        return [creature for creature in self.creatures if creature.is_attackable()]
 
     def mana_available(self):
         return len(self.get_untap_lands()) + self.manapool.mana
@@ -80,7 +93,7 @@ class Hand(list):
 
     def log_str(self):
         card_str = [card.log_str() for card in self]
-        return "-".join(card_str)
+        return "|".join(card_str)
 
 class Graveyard(list):
     pass

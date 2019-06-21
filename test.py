@@ -1,7 +1,9 @@
 from mtg import game, player, utils
 import pandas as pd 
 import numpy as np 
+import logging
 
+logging.basicConfig(level=logging.DEBUG)
 
 np.random.seed(2)
 

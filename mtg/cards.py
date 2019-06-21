@@ -20,6 +20,9 @@ class Permanent(Card):
         super(Permanent, self).__init__(id, name)
         self.state = UNTAP
 
+    def log_str(self):
+        return "%d_%d_%s" % (self.tmp_id, self.id, self.state)
+
     def is_tapped(self):
         return self.state == TAP
 
@@ -40,7 +43,7 @@ class Permanent(Card):
 class Land(Permanent):
     def __init__(self, id, name):
         super(Land, self).__init__(id, name)
-        self.state = TAP
+        self.state = UNTAP
 
     def is_playable(self, game, player):
         if game.is_turn(player) \
@@ -67,6 +70,7 @@ class Creature(Permanent):
 
         self.tmp_toughness = toughness
 
+        self.summon_sick = True
 
     def is_playable(self, game, player):
         if game.is_turn(player) \
@@ -75,6 +79,17 @@ class Creature(Permanent):
             return True
         else:
             return False
+
+    def log_str(self):
+        return "%d_%d(%d/%d/%d)_%s%s" % (self.tmp_id, self.id, 
+            self.cost, self.power, self.tmp_toughness, self.state, 
+            "ss" if self.summon_sick else "")
+
+    def fix_summon_sick(self):
+        self.summon_sick = False
+
+    def is_attackable(self):
+        return (not self.summon_sick) and (not self.is_tapped())
 
     def damaged(self, n):
         self.tmp_toughness -= n

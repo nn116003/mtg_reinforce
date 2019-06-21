@@ -42,14 +42,14 @@ class Player():
         if len(drawed) > 0:
             self.hand.extend(drawed)
         else:
-            raise Exception("LO")
+            raise Exception("Player%d loses, LO" % self.id)
         self.log_info("hand " + self.hand.log_str())
 
     def damaged(self, n):
-        self.log_info("damaged %d" % n)
         self.life -= n
+        self.log_info("damaged %d life %d" % (n, self.life))
         if self.life <= 0:
-            raise Exception("you dead")
+            raise Exception("Player%d is dead" % self.id)
 
     def _cast_from_hand(self, card):
         
@@ -138,7 +138,7 @@ class Stupid_Player(Player):
         return None
 
     def _pick_attack_creatures(self, game):
-        untap_creatures = self.battlefield.get_untap_creatures()
+        untap_creatures = self.battlefield.get_attackable_creatures()
         l = len(untap_creatures)
         if l > 0:
             attack_creatures = np.random.choice(
@@ -162,7 +162,7 @@ class Stupid_Player(Player):
             block_creatures = []
         
         block_list = [[]] * len(attackers)
-        block_list[0].extend(block_creatures)
+        block_list[0] = block_creatures
 
         return block_list
 

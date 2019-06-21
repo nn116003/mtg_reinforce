@@ -7,12 +7,12 @@ class BattleController():
         #                  'a2b':[damage, damage]}
         self.battles = []
         
-
     def reset(self):
         self.battles = []
 
     def add_attackers(self, creatures):
         for creature in creatures:
+            creature.tap()
             self.battles.append({'attacker':creature})
         
     def add_blockers(self, blocker_list):
