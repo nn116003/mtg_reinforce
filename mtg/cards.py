@@ -12,7 +12,7 @@ class Card():
     def is_playable(self, game, player):
         pass
 
-    def log_str(self):
+    def __st__r(self):
         return "%d_%d" % (self.tmp_id, self.id)
 
 class Permanent(Card):
@@ -20,7 +20,7 @@ class Permanent(Card):
         super(Permanent, self).__init__(id, name)
         self.state = UNTAP
 
-    def log_str(self):
+    def __str__(self):
         return "%d_%d_%s" % (self.tmp_id, self.id, self.state)
 
     def is_tapped(self):
@@ -80,7 +80,7 @@ class Creature(Permanent):
         else:
             return False
 
-    def log_str(self):
+    def __str__(self):
         return "%d_%d(%d/%d/%d)_%s%s" % (self.tmp_id, self.id, 
             self.cost, self.power, self.tmp_toughness, self.state, 
             "ss" if self.summon_sick else "")

@@ -53,9 +53,9 @@ class Game():
 
         if show_bf:
             self.log_info("Player_1 BattleField:%s" 
-                        % self.players[0].battlefield.log_str() )
+                        % str(self.players[0].battlefield) )
             self.log_info("Player_2 BattleField:%s" 
-                        % self.players[1].battlefield.log_str() )
+                        % str(self.players[1].battlefield) )
 
     def _turn(self):
         self.log_info("start ##############################")
@@ -117,14 +117,14 @@ class Game():
         [player.shuffle() for player in self.players]
         self._init_draw()
 
-        try:    
-            nturn = 0
-            while True:
-                self._turn()
-                self.playing_idx = 1 - self.playing_idx
-                nturn += 1
-        except Exception as e:
-            print(e)
+        #try:    
+        nturn = 0
+        while True:
+            self._turn()
+            self.playing_idx = 1 - self.playing_idx
+            nturn += 1
+        #except Exception as e:
+        #    print(e)
         
         
 

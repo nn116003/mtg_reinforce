@@ -28,8 +28,8 @@ class BattleController():
             bcs = battle['blockers']
             ab_list.append(
                 "A:%s B:%s" % (
-                    ac.log_str(),
-                    "+".join([bs.log_str() for bs in bcs ])
+                    str(ac),
+                    "+".join([str(bs) for bs in bcs ])
                     )
             )
         
@@ -42,11 +42,11 @@ class BattleController():
             bcs = battle['blockers']
             ds = battle['a2b']
             a2b_str = "+".join([
-                "%sD%d" % (bc.log_str(), d) 
+                "%sD%d" % (str(bc), d) 
                 for bc,d   in zip(bcs, ds) ])
             abd_list.append(
                 "A:%s B:%s" % (
-                    ac.log_str(),
+                    str(ac),
                     a2b_str
                     )
             )

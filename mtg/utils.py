@@ -33,7 +33,18 @@ def assign_ids_in_game(deck1, deck2):
         card.tmp_id = l + j
 
 
+def show_creature_list(creatures, name):
+    c_dict = {"tmp_id":[],"name":[],"cost":[],"power":[],"toughness":[],"state":[]}
+    for c in creatures:
+        c_dict["tmp_id"].append(c.tmp_id)
+        c_dict["name"].append(c.name)
+        c_dict["cost"].append(c.cost)        
+        c_dict["power"].append(c.power)
+        c_dict["toughness"].append(c.toughness)
+        c_dict["state"].append(c.state)
 
-
+    print("##### %s #####" % name)
+    print(pd.DataFrame(c_dict))
+    print("##########")
 
 

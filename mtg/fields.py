@@ -23,10 +23,10 @@ class BattleField():
         self.creatures = []
         self.manapool = Manapool()
 
-    def log_str(self):
+    def __str__(self):
         n_lands = len(self.lands)
         n_untap_lands = len(self.get_untap_lands())
-        c_s = "|".join([card.log_str() for card in self.creatures ])
+        c_s = "|".join([str(card) for card in self.creatures ])
         return "Lands:T%d|U%d Creatures:%s" % (n_lands - n_untap_lands, n_untap_lands,
                                                 c_s)
 
@@ -91,8 +91,8 @@ class Hand(list):
     def lands(self):
         return [card for card in self if "Land" in str(type(card))]
 
-    def log_str(self):
-        card_str = [card.log_str() for card in self]
+    def __str__(self):
+        card_str = [str(card) for card in self]
         return "|".join(card_str)
 
 class Graveyard(list):

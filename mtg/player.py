@@ -1,6 +1,7 @@
 from mtg.settings import *
 from mtg.fields import *
 from mtg.cards import *
+from mtg.utils import show_creatures_list
 import numpy as np
 import logging
 
@@ -11,6 +12,7 @@ class Player():
         self.life = LIFE
         self.library = Library(deck)
         #self.shuffle()
+        self.hand = None
         
         self.battlefield = BattleField()
         self.graveyard = Graveyard()
@@ -31,10 +33,13 @@ class Player():
     def mana_available(self):
         return self.battlefield.mana_available()
 
+    def castable_card(self, game):
+        return {"hand":self.hand.playable(game, self)}
+
     def init_draw(self, n):
         self.log_info("init_draw")
         self.hand = Hand(self.library.pop_top(n))
-        self.log_info("hand " + self.hand.log_str())
+        self.log_info("hand " + str(self.hand))
         
     def draw(self, n):
         self.log_info("draw")
@@ -43,7 +48,7 @@ class Player():
             self.hand.extend(drawed)
         else:
             raise Exception("Player%d loses, LO" % self.id)
-        self.log_info("hand " + self.hand.log_str())
+        self.log_info("hand " + str(self.hand))
 
     def damaged(self, n):
         self.life -= n
@@ -67,7 +72,7 @@ class Player():
         self.n_played_lands = 0
 
     def _discard(self, card):
-        self.log_info("discard " + card.log_str())
+        self.log_info("discard " + str(card))
         self.hand.remove(card)
         self.graveyard.append(card)
 
@@ -97,7 +102,7 @@ class Player():
     def cast_command(self, game):
         cast_card = self._pick_cast_card(game)
         if cast_card is not None:
-            self.log_info("cast_from_hand " + cast_card.log_str())
+            self.log_info("cast_from_hand " + str(cast_card))
             self._cast_from_hand(cast_card)
             return 1
         else:
@@ -105,7 +110,7 @@ class Player():
 
     def attack_command(self, game):
         attack_creatures = self._pick_attack_creatures(game)
-        self.log_info("attack " + "-".join([card.log_str() for card in attack_creatures]))
+        self.log_info("attack " + "-".join([str(card) for card in attack_creatures]))
         self._attack(attack_creatures, game.battle_ctrl)
         return 0
 
@@ -138,8 +143,8 @@ class Stupid_Player(Player):
         return None
 
     def _pick_attack_creatures(self, game):
-        untap_creatures = self.battlefield.get_attackable_creatures()
-        l = len(untap_creatures)
+        attackable_creatures = self.battlefield.get_attackable_creatures()
+        l = len(attackable_creatures)
         if l > 0:
             attack_creatures = np.random.choice(
                 untap_creatures, size=np.random.randint(0, l+1), 
@@ -169,7 +174,80 @@ class Stupid_Player(Player):
 
             
 
+class Cmd_Player(Player):
+    def show_battle_field(self, game):
+        pass
+    
+    def _pick_cast_card(self, game):
+        while True:
+            castable_cards = self.castable_card(self, game)['hand']
+            castable_dict = {card.tmp_id:card for card in castable_cards}
 
+            if len(castable_cards) == 0:
+                return None
+
+            print("Type...")
+            print("[tmp_id]: select cast card.")
+            print("[bf]    : show battle field.")
+            print("[skip]  : skip the phase.")
+
+            choice = input().lower()
+            if choice == "bf":
+                self.show_battle_field(game)
+            elif choice == "skip":
+                return None
+            elif choice.isdecimal() and int(choice) in castable_dict:
+                return castable_dict[int(choice)]
+            else:
+                print("Bad input.")
+
+    def _pick_attack_creatures(self, game):
+        attackable_creatures = self.battlefield.get_attackable_creatures()
+        attackable_dict = {card.tmp_id:card for card in attackable_creatures}
+
+        if len(attackable_creatures) == 0:
+            return []
+        
+        while True:
+
+            print("Type...")
+            print("[tmp_id1|tmp_id2|..]: select attack card.")
+            print("[bf]                : show battle field.")
+            print("[skip]              : skip the phase.")
+
+            choice = input().lower()
+            if choice == "bf":
+                self.show_battle_field(game)
+            elif choice == "skip":
+                return []
+            else:
+                tmp_ids = choice.split("|")
+                is_deci = sum([tmp.isdecimal() for tmp in tmp_ids])
+                if is_deci < len(tmp_ids):
+                    print("Bad input.")
+                else:
+                    return [attackable_dict[int(tmp_id)] for tmp_id in tmp_ids]
+
+    def _pick_block_creatures(self, attackers, game):
+        blockable_creatures = self.battlefield.get_untap_creatures()
+        blockable_dict = {card.tmp_id:card for card in blockable_creatures}
+        if len(attackers) == 0 or len(blockable_creatures) == 0:
+            return []
+
+        while True:
+            show_creatures_list(attackers, 'opponent is attacking with ...')
+
+            print("Type...")
+            print("[tmp_id1|tmp_id2|..]: select block creatures.")
+            print("[bf]                : show battle field.")
+            print("[skip]              : skip the phase.")
+
+            choice = input().lower()
+        
+
+    def _assign_damage(self, attacker, blockers, game):
+        pass
+            
 
 
 
