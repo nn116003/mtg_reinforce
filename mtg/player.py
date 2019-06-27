@@ -1,7 +1,7 @@
 from mtg.settings import *
 from mtg.fields import *
 from mtg.cards import *
-from mtg.utils import show_creatures_list
+from mtg.utils import show_creatures_list, to_all_decimal
 import numpy as np
 import logging
 
@@ -180,7 +180,7 @@ class Cmd_Player(Player):
     
     def _pick_cast_card(self, game):
         while True:
-            castable_cards = self.castable_card(self, game)['hand']
+            castable_cards = self.castable_card(game)['hand']
             castable_dict = {card.tmp_id:card for card in castable_cards}
 
             if len(castable_cards) == 0:
@@ -221,17 +221,17 @@ class Cmd_Player(Player):
             elif choice == "skip":
                 return []
             else:
-                tmp_ids = choice.split("|")
-                is_deci = sum([tmp.isdecimal() for tmp in tmp_ids])
-                if is_deci < len(tmp_ids):
+                tmp_ids_str = choice.split("|")
+                flg, tmp_ids = to_all_decimal(tmp_ids_str)
+                if not flg or len(set(tmp_ids) - set(attackable_dict.keys()) ) > 0:
                     print("Bad input.")
                 else:
-                    ##### TODO tmp_id is not in dict
                     return [attackable_dict[int(tmp_id)] for tmp_id in tmp_ids]
 
     def _pick_block_creatures(self, attackers, game):
         blockable_creatures = self.battlefield.get_untap_creatures()
         blockable_dict = {card.tmp_id:card for card in blockable_creatures}
+        att_tmp_ids = [c.tmp_id for c in attackers]
         if len(attackers) == 0 or len(blockable_creatures) == 0:
             return []
 
@@ -249,12 +249,16 @@ class Cmd_Player(Player):
             elif choice == "skip":
                 return [[]] * len(attackers)
             else:
-                battle_dict = {}
-                battles = [b.split(':') for b in choice.split('|')]
-
-                for battle in battles:
-                    ids = 
-
+                battles_str = [b.split(':') for b in choice.split('|')]
+                flg, battles = to_all_decimal(battles_str)
+                tmp_att = [t[0] for t in battles]
+                tmp_blo = [t[1:] for t in battles]
+                
+                if not flg or len(set(tmp_blo) - set(blockable_dict.key()) ) > 0
+                        or len(set(tmp_att) - set(att_tmp_ids)) > 0:
+                    print("Bad input")
+                else:
+                    pass 
 
 
 

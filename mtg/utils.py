@@ -1,5 +1,5 @@
-from mtg.cards import Land, Creature
-from mtg.settings import DECK_NUM
+from .cards import Land, Creature
+from .settings import DECK_NUM
 import pandas as pd 
 import numpy as np 
 
@@ -33,7 +33,7 @@ def assign_ids_in_game(deck1, deck2):
         card.tmp_id = l + j
 
 
-def show_creature_list(creatures, name):
+def show_creatures_list(creatures, name):
     c_dict = {"tmp_id":[],"name":[],"cost":[],"power":[],"toughness":[],"state":[]}
     for c in creatures:
         c_dict["tmp_id"].append(c.tmp_id)
@@ -46,5 +46,18 @@ def show_creature_list(creatures, name):
     print("##### %s #####" % name)
     print(pd.DataFrame(c_dict))
     print("##########")
+
+def to_all_decimal(str_arr):
+    flg = True
+    res = []
+    for x in str_arr:
+        if type(x) == list:
+            f, r = to_all_decimal(x)
+        else:
+            f = x.isdecimal()
+            r = int(x) if f else x
+        flg = flg and f
+        res.append(r)
+    return flg, res
 
 
