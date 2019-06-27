@@ -147,7 +147,7 @@ class Stupid_Player(Player):
         l = len(attackable_creatures)
         if l > 0:
             attack_creatures = np.random.choice(
-                untap_creatures, size=np.random.randint(0, l+1), 
+                attackable_creatures, size=np.random.randint(0, l+1), 
                 replace=False)
             return attack_creatures
         else:
@@ -226,6 +226,7 @@ class Cmd_Player(Player):
                 if is_deci < len(tmp_ids):
                     print("Bad input.")
                 else:
+                    ##### TODO tmp_id is not in dict
                     return [attackable_dict[int(tmp_id)] for tmp_id in tmp_ids]
 
     def _pick_block_creatures(self, attackers, game):
@@ -238,11 +239,25 @@ class Cmd_Player(Player):
             show_creatures_list(attackers, 'opponent is attacking with ...')
 
             print("Type...")
-            print("[tmp_id1|tmp_id2|..]: select block creatures.")
+            print("[a1(tmp_id):b1|a2:b2:b3|..] : select block creatures. (b1 blocks a1, b2 and b3 block a2)")
             print("[bf]                : show battle field.")
             print("[skip]              : skip the phase.")
 
             choice = input().lower()
+            if choice == "bf":
+                self.show_battle_field(game)
+            elif choice == "skip":
+                return [[]] * len(attackers)
+            else:
+                battle_dict = {}
+                battles = [b.split(':') for b in choice.split('|')]
+
+                for battle in battles:
+                    ids = 
+
+
+
+
         
 
     def _assign_damage(self, attacker, blockers, game):
