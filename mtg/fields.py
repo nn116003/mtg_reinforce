@@ -1,4 +1,5 @@
-from mtg.settings import *
+from .settings import *
+from .utils import show_creatures_list
 
 
 class Manapool():
@@ -29,6 +30,14 @@ class BattleField():
         c_s = "|".join([str(card) for card in self.creatures ])
         return "Lands:T%d|U%d Creatures:%s" % (n_lands - n_untap_lands, n_untap_lands,
                                                 c_s)
+
+    def show_creatures(self, name):
+        show_creatures_list(self.creatures, name)
+
+    def show_lands(self):
+        n_lands = len(self.lands)
+        n_untap_lands = len(self.get_untap_lands())
+        print("Lands:T%d|U%d" % (n_lands - n_untap_lands, n_untap_lands))
 
     def untap_all(self):
         [land.untap() for land in self.lands if land.is_tapped()]

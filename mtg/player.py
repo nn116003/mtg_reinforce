@@ -23,6 +23,19 @@ class Player():
 
         self.logger = logger
 
+    def show_bf(self, as_op=False):
+        if as_op:
+            print("Opponent life:%d hand:%d Lib:%d" 
+                % (self.life, len(self.hand), len(self.library)))
+            self.battlefield.show_lands()
+            self.battlefield.show_creatures("Opponent creatures")
+        else:
+            self.battlefield.show_creatures("Your creatures")
+            self.battlefield.show_lands()
+            print("Hand:" + str(self.hand))
+            print("Your life:%d Lib:%d" % (self.life, len(self.library)))
+
+
     def log_info(self, mes):
         self.logger.info("Player_%d " % self.id + mes)
 
@@ -56,7 +69,7 @@ class Player():
         if self.life <= 0:
             raise Exception("Player%d is dead" % self.id)
 
-    def _cast_from_hand(self, card):
+    def _cast_from_hand(self, card, game):
         
         self.hand.remove(card)
         tmp = str(type(card))
@@ -103,7 +116,7 @@ class Player():
         cast_card = self._pick_cast_card(game)
         if cast_card is not None:
             self.log_info("cast_from_hand " + str(cast_card))
-            self._cast_from_hand(cast_card)
+            self._cast_from_hand(cast_card, game)
             return 1
         else:
             return 0
@@ -175,8 +188,13 @@ class Stupid_Player(Player):
             
 
 class Cmd_Player(Player):
-    def show_battle_field(self, game):
-        pass
+    def show_game(self, game):
+        op = game.get_opponent(self)
+
+        print("####################################")
+        op.show_bf(as_op=True)
+        self.show_bf()
+        print("####################################")
     
     def _pick_cast_card(self, game):
         while True:
@@ -186,6 +204,9 @@ class Cmd_Player(Player):
             if len(castable_cards) == 0:
                 return None
 
+            print("##### You can cast a card. #####")
+            print("Your hand ...")
+            print(str(self.hand))
             print("Type...")
             print("[tmp_id]: select cast card.")
             print("[bf]    : show battle field.")
@@ -193,7 +214,7 @@ class Cmd_Player(Player):
 
             choice = input().lower()
             if choice == "bf":
-                self.show_battle_field(game)
+                self.show_game(game)
             elif choice == "skip":
                 return None
             elif choice.isdecimal() and int(choice) in castable_dict:
@@ -210,6 +231,7 @@ class Cmd_Player(Player):
         
         while True:
 
+            print("##### Choose attackers. ######")
             print("Type...")
             print("[tmp_id1|tmp_id2|..]: select attack card.")
             print("[bf]                : show battle field.")
@@ -217,7 +239,7 @@ class Cmd_Player(Player):
 
             choice = input().lower()
             if choice == "bf":
-                self.show_battle_field(game)
+                self.show_game(game)
             elif choice == "skip":
                 return []
             else:
@@ -237,7 +259,7 @@ class Cmd_Player(Player):
 
         while True:
             show_creatures_list(attackers, 'opponent is attacking with ...')
-
+            print("##### Choose blockers. #####")
             print("Type...")
             print("[a1(tmp_id):b1|a2:b2:b3|..] : select block creatures. (b1 blocks a1, b2 and b3 block a2)")
             print("[bf]                : show battle field.")
@@ -245,27 +267,31 @@ class Cmd_Player(Player):
 
             choice = input().lower()
             if choice == "bf":
-                self.show_battle_field(game)
+                self.show_game(game)
             elif choice == "skip":
                 return [[]] * len(attackers)
             else:
                 battles_str = [b.split(':') for b in choice.split('|')]
                 flg, battles = to_all_decimal(battles_str)
                 tmp_att = [t[0] for t in battles]
-                tmp_blo = [t[1:] for t in battles]
+                tmp_blo = [] 
+                [tmp_blo.extend(t[1:]) for t in battles]
                 
-                if not flg or len(set(tmp_blo) - set(blockable_dict.key()) ) > 0
+                if not flg or len(set(tmp_blo) - set(blockable_dict.keys()) ) > 0 \
                         or len(set(tmp_att) - set(att_tmp_ids)) > 0:
                     print("Bad input")
                 else:
-                    pass 
+                    battles_dict = {tmp[0]:tmp[1:] for tmp in battles}
+                    block_list = [[]] * len(attackers)
+                    for i, att in enumerate(attackers):
+                        if att.tmp_id in battles_dict:
+                            blockers = [blockable_dict[i] for i 
+                                            in battles_dict[att.tmp_id]]
+                            block_list[i] = blockers
+                    return block_list
 
-
-
-        
-
-    def _assign_damage(self, attacker, blockers, game):
-        pass
+#    def _assign_damage(self, attacker, blockers, game):
+#        pass
             
 
 

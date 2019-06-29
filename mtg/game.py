@@ -17,6 +17,9 @@ class Game():
         
         self.n_turn = 0
 
+    def get_opponent(self, player):
+        return list((set(self.players) - set([player])))[0]
+
     def log_info(self, mes):
         self.logger.info("Turn_%d P_%d " % 
                             (self.n_turn, self.playing_idx+1) + mes)

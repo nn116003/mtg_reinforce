@@ -12,8 +12,29 @@ class Card():
     def is_playable(self, game, player):
         pass
 
-    def __st__r(self):
+    def __str__(self):
         return "%d_%d" % (self.tmp_id, self.id)
+
+class Spell(Card):
+    def __init__(self, id, name, cost, flash=False):
+        super(Spell, self).__init__(id, name)
+        self.cost = cost
+        self.flash = flash
+
+    def is_playable(self, game, player):
+        if not self.flash:
+            if game.is_turn(player) \
+                and game.is_main() \
+                and (player.mana_available() >= self.cost):
+                return True
+            else:
+                return False
+        else:
+            return player.mana_available() >= self.cost
+
+    def effect(self, game, player):
+        pass
+
 
 class Permanent(Card):
     def __init__(self, id, name):
