@@ -70,16 +70,18 @@ class Player():
             raise Exception("Player%d is dead" % self.id)
 
     def _cast_from_hand(self, card, game):
-        
+        # to be implemented in Game class ?
         self.hand.remove(card)
-        tmp = str(type(card))
-        
-        if "Land" in tmp:
+                
+        if isinstance(card, Land):
             self.battlefield.lands.append(card)
             self.n_played_lands += 1
-        else:
+        elif isinstance(card, Creature):
             self.battlefield.use_mana(card.cost)
             self.battlefield.creatures.append(card)
+        else:# spell
+            card.effect(game, self)
+            self.graveyard.append(card)
 
     def end_turn(self):
         self.n_played_lands = 0

@@ -35,6 +35,16 @@ class Spell(Card):
     def effect(self, game, player):
         pass
 
+class WrathG(Spell):
+    def __init__(self, id, cost):
+        super(WrathG, self).__init__(id, "WrathOfGod", cost)
+
+    def effect(self, game, player):
+        op = game.get_opponent(self, player)
+        player.gaveyard.extend(player.battlefield.creatures)
+        player.battlefield.creatures = []
+        op.gaveyard.extend(op.battlefield.creatures)
+        op.battlefield.creatures = []
 
 class Permanent(Card):
     def __init__(self, id, name):
