@@ -80,6 +80,7 @@ class Player():
             self.battlefield.use_mana(card.cost)
             self.battlefield.creatures.append(card)
         else:# spell
+            self.battlefield.use_mana(card.cost)
             card.effect(game, self)
             self.graveyard.append(card)
 

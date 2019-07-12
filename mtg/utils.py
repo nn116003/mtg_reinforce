@@ -1,4 +1,4 @@
-from .cards import Land, Creature
+from .cards import Land, Creature, WrathG
 from .settings import DECK_NUM
 import pandas as pd 
 import numpy as np 
@@ -20,8 +20,9 @@ def _random_creatures_from_list(n, path):
 
 def random_deck_from_list(creature_num, path):
     creatures = _random_creatures_from_list(creature_num, path)
-    lands = [Land(99, 'land') for i in range(DECK_NUM - creature_num)]
-    return creatures + lands
+    wrathes = [WrathG(999, 4) for i in range(4)]
+    lands = [Land(99, 'land') for i in range(DECK_NUM - creature_num - 4)]
+    return creatures + wrathes + lands
 
 
 def assign_ids_in_game(deck1, deck2):

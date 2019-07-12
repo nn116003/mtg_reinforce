@@ -8,8 +8,8 @@ logging.basicConfig(level=logging.DEBUG)
 
 np.random.seed(2)
 
-deck1 = utils.random_deck_from_list(36, './mtg/cards.csv')
-deck2 = utils.random_deck_from_list(36, './mtg/cards.csv')
+deck1 = utils.random_deck_from_list(32, './mtg/cards.csv')
+deck2 = utils.random_deck_from_list(32, './mtg/cards.csv')
 
 flg = sys.argv[1]
 

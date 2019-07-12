@@ -40,10 +40,10 @@ class WrathG(Spell):
         super(WrathG, self).__init__(id, "WrathOfGod", cost)
 
     def effect(self, game, player):
-        op = game.get_opponent(self, player)
-        player.gaveyard.extend(player.battlefield.creatures)
+        op = game.get_opponent(player)
+        player.graveyard.extend(player.battlefield.creatures)
         player.battlefield.creatures = []
-        op.gaveyard.extend(op.battlefield.creatures)
+        op.graveyard.extend(op.battlefield.creatures)
         op.battlefield.creatures = []
 
 class Permanent(Card):
@@ -133,7 +133,7 @@ class Creature(Permanent):
         self.reset_damage()
 
     def is_dead(self):
-        return self.tmp_toughness < 0
+        return self.tmp_toughness <= 0
 
 
         
