@@ -10,6 +10,7 @@ class Player():
         self.id = id
 
         self.life = LIFE
+        self.deck = deck
         self.library = Library(deck)
         #self.shuffle()
         self.hand = None
@@ -22,6 +23,23 @@ class Player():
         self.n_played_lands = 0
 
         self.logger = logger
+
+    def reset(self, deck=None):
+        self.life = LIFE
+        if deck is None:
+            self.library = Library(self.deck)
+        else:
+            self.deck = deck
+            self.library = Library(deck)
+            
+        self.hand = None
+        
+        self.battlefield = BattleField()
+        self.graveyard = Graveyard()
+        self.exiled = Exiled()
+
+        self.n_playable_lands = LANDS_PLAYABLE
+        self.n_played_lands = 0
 
     def show_bf(self, as_op=False):
         if as_op:

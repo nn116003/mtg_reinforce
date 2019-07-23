@@ -17,6 +17,17 @@ class Game():
         
         self.n_turn = 0
 
+    def reset(self, players):
+        self.players = players
+        assign_ids_in_game(players[0].library, players[1].library) 
+
+        self.phase = None
+        self.battle_ctrl = BattleController()
+        
+        self.playing_idx = 0 # players[0] plays first
+
+        self.n_turn = 0
+
     def get_opponent(self, player):
         return list((set(self.players) - set([player])))[0]
 
