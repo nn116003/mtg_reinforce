@@ -11,6 +11,7 @@ class Env(Game):
         if not first:
             self.playing_idx = 1
 
+        # to save past n turn features
         self.feature_memory = []
 
         self.prev_snapshot = {
@@ -72,9 +73,37 @@ class Env(Game):
 
         return card_add + alpha * life_diff
 
-    def step(self, action):
+    def _opponent_step(self):
+        pass
+
+    def step(self):
+        # called in learner's turn 
+        # do one action
+        # update state
+        # update phase
+        # calc reward
+        # return reward, done, next phase?
         if self.phase == MAIN:
+            # 0: skip 1:main
+            flg = self.learner.cast_commnad(self)
+            if flg == 0:
+                pass
+            
+        elif self.phase == ATTACK:
             pass
+        elif self.phase == BLOCK:
+            pass
+        elif self.phase == ASSIGN:
+            pass
+        elif self.phase == MAIN2:
+            flg = self.learner.cast_commnad(self)
+            if flg == 0: # end of learner's turn
+                self._end_turn()
+                self.n_turn += 1
+                self.playing_idx = 1 - self.playing_idx
+                # create .main() or .attack()
+        else:
+            raise Exception("invalid step")
 
 
         
