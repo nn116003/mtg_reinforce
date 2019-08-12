@@ -71,11 +71,8 @@ class Game():
             self.log_info("Player_2 BattleField:%s" 
                         % str(self.players[1].battlefield) )
 
-    def _turn(self):
-        self.log_info("start ##############################")
-        player = self.players[self.playing_idx]
-        opponent = self.players[1 - self.playing_idx]
-        
+
+    def _upkeep(self, player):
         # fix summon sick
         player.battlefield.fix_summon_sick()
 
@@ -83,11 +80,13 @@ class Game():
         self.set_phase(UPKEEP)
         player.battlefield.untap_all()
 
+    def _draw(self, player):
         # draw
         self.set_phase(DRAW)
         if self.n_turn > 0:
             player.draw(1)
 
+    def _main(self, player):
         # main1
         self.set_phase(MAIN1)
         while True:
@@ -95,16 +94,20 @@ class Game():
                 break
             # there is no instant card yet,
 
+    def _attack(self, player):
         # battle
         self.set_phase(ATTACK)
         player.attack_command(self)
 
+    def _block(self, blocking_player):
         self.set_phase(BLOCK)
-        opponent.block_command(self)
+        blocking_player.block_command(self)
 
+    def _assign(self, player):
         self.set_phase(ASSIGN, show_bf=False)
         player.assign_damages_command(self)
 
+    def _damage(self, player, opponent):
         self.set_phase(DAMAGE, show_bf=False)
         damages2opponent = self.battle_ctrl.exec_damages()
         total_damage = sum([x[1] for x in damages2opponent])
@@ -115,6 +118,7 @@ class Game():
 
         self.battle_ctrl.reset()
 
+    def _main2(self, player):
         # main2
         self.set_phase(MAIN2)
         while True:
@@ -122,9 +126,37 @@ class Game():
                 break
             # there is no instant card yet,
 
-        # end
+    def _end(self):
         self._end_turn()
         self.n_turn += 1
+        
+            
+    def _turn(self):
+        self.log_info("start ##############################")
+        player = self.players[self.playing_idx]
+        opponent = self.players[1 - self.playing_idx]
+        
+        # fix summon sick
+        # upkeep
+        self._upkeep(player)
+
+        # draw
+        self._draw(player)
+
+        # main1
+        self._main(player)
+
+        # battle
+        self._attack(player)
+        self._block(opponent)
+        self._assign(player)
+        self._damage(player, opponent)
+        
+        # main2
+        self._main2(player)
+        
+        # end
+        self._end()
         
 
     def main(self):
