@@ -21,17 +21,16 @@ def _card2idlist(cards, cardid2idx, battlefield=False):
         
 
 class FeatureHolder(object):
-    def __init__(self, length, creature_ids, land_id, wrath_id):
-        cardid2idx = {}
-        for idx, card_id in enumerate(creature_ids):
-            cardid2idx[card_id] = idx
-        cardid2idx[land_id] = idx + 1 
-        cardid2idx[wrath_id] = idx + 2
+    def __init__(self, length, cardid2idx):
         self.cardid2idx = cardid2idx 
 
         self.length = length 
         self.features = []
-        for i in range(length):
+        self.reset()
+
+    def reset(self):
+        self.features = []
+        for i in range(self.length):
             feats = {
                 "creatures": _card2idlist([], self.cardid2idx, True ),
                 "lands":[0, 0],
@@ -71,7 +70,7 @@ class FeatureHolder(object):
         return self.features[-self.length:]
 
 class Env(Game):
-    def __init__(self, learner, opponent, first=True, logging=logging):
+    def __init__(self, learner, opponent, cardid2idx, feat_length, first=True, logging=logging):
         super(Env, self).__init__([learner, opponent], logging=logging)
         self.learner = learner
         self.opponent = opponent
@@ -80,8 +79,9 @@ class Env(Game):
             self.playing_idx = 1
 
         # to save past n turn features
-        self.feature_memory = []
+        self.feature_holder = FeatureHolder(feat_length, cardid2idx )
 
+        # sanpshot  of game(not = feat, use to calc reward)
         self.prev_snapshot = {
             "self":{
                 "c_ids":[],
@@ -103,7 +103,12 @@ class Env(Game):
             self.opponent = opponent
         else:
             self.opponent.reset()
-        self.feature_memory = []
+        self.feature_holder.reset()
+
+    def possible_actions(self, player):
+        if self.phase is in [MAIN, MAIN2]:
+            pass
+            #######################
 
     def _snapshot(self):
         return {
@@ -121,10 +126,6 @@ class Env(Game):
             }
         }
         
-
-    def _get_features(self):
-        pass
-
     def _reward(self, snapshot, alpha = 0.1, beta=0.1):
         prev_self_state = self.prev_snapshot["self"]
         prev_op_state = self.prev_snapshot["opponent"]
@@ -143,7 +144,7 @@ class Env(Game):
 
 
     def _prevNS_prevR(self):
-        prev_nextstate = self.get_state()
+        prev_nextstate = self.feature_holder.get_state()
         snapshot = self._snapshot()
         prev_reward = self._reward(snapshot)
         self.prev_snapshot = snapshot
@@ -172,7 +173,7 @@ class Env(Game):
                 # main
                 self.set_phase(MAIN)
                 while True:
-                    possible_actions = self.possible_action(self.learner)
+                    possible_actions = self.possible_actions(self.learner)
                     if possible_actions is not None:
                         nextstate, reward = self._prevNS_prevR()
                         yield state, action, nextstate, reward, possible_actions
@@ -186,7 +187,7 @@ class Env(Game):
                         
                 # attack
                 self.set_phase(ATTACK)
-                possible_actions = self.possible_action(self.learner)
+                possible_actions = self.possible_actions(self.learner)
                 if possible_actions is not None:
                     nextstate, reward = self._prevNS_prevR()
                     yield state, action, nextstate, reward, possible_actions
@@ -206,12 +207,12 @@ class Env(Game):
                 # MAIN2
                 self.set_phase(MAIN2)
                 while True:
-                    possible_actions = self.possible_action(self.learner)
+                    possible_actions = self.possible_actions(self.learner)
                     if possible_actions is not None:
                         nextstate, reward = self._prevNS_prevR()
                         yield state, action, nextstate, reward, possible_actions
 
-                        state = self.get_state()
+                        state = self.feature_holder.get_state()
                         action = self.learner.cast_action(state, possible_actions)
                         if action is None:
                             break
@@ -226,7 +227,7 @@ class Env(Game):
                 self._main(self.opponent)
 
                 # attack
-                self._attack(self.opponet)
+                self._attack(self.opponent)
 
                 # block
                 possible_actions = self.possible_action(self.learner)
@@ -234,7 +235,7 @@ class Env(Game):
                     nextstate, reward = self._prevNS_prevR()
                     yield state, action, nextstate, reward, possible_actions
 
-                    state = self.get_state()
+                    state = self.feature_holder.get_state()
                     action = self.learner.block_action(state, possible_actions)
 
                 self._assign(self.opponent)
