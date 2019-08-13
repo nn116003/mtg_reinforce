@@ -2,19 +2,73 @@ from mtg.game import Game
 from mtg.settings import *
 import logging
 
+def _card2idlist(cards, cardid2idx, battlefield=False):
+    result = []
+    if battlefield:
+        if len(cards) == 0:
+            result.append([cardid2idx["None"], 0, 0])
+        else:
+            for card in cards:
+                tmp = [cardid2idx[card.id], 1-int(card.is_tapped()), int(card.summon_sick)]
+                result.append(tmp)
+    else:
+        if len(cards) == 0:
+            result.append(cardid2idx["None"])
+        else:
+            [result.append(cardid2idx[card.id]) for card in cards]
+
+    return result 
+        
 
 class FeatureHolder(object):
-    def __init__(length, creature_ids, land_id, wrath_id):
-        pass
+    def __init__(self, length, creature_ids, land_id, wrath_id):
+        cardid2idx = {}
+        for idx, card_id in enumerate(creature_ids):
+            cardid2idx[card_id] = idx
+        cardid2idx[land_id] = idx + 1 
+        cardid2idx[wrath_id] = idx + 2
+        self.cardid2idx = cardid2idx 
 
-    def _extract_feats(player, opponent):
-        pass
+        self.length = length 
+        self.features = []
+        for i in range(length):
+            feats = {
+                "creatures": _card2idlist([], self.cardid2idx, True ),
+                "lands":[0, 0],
+                "n_hand":0,
+                "life":LIFE ,
+                "n_lib":DECK_NUM ,
+                "gy":_card2idlist([], self.cardid2idx, False),
+                "hand":_card2idlist([], self.cardid2idx, False)
+            }
+            self.features.append({"player":feats, "opponent":feats})
 
-    def push(game):
-        pass
+    def _player_feats(self, player, hand=True):
+        bf = player.battlefield
+        n_lands = len(bf.lands)
+        n_untap_lands = len(bf.get_untap_lands)
+        feats = {
+            "creatures": _card2idlist(bf.creatures, self.cardid2idx, True ),
+            "lands":[n_untap_lands, n_lands - n_untap_lands],
+            "n_hand":len(player.hand),
+            "life":player.life,
+            "n_lib":len(player.library),
+            "gy":_card2idlist(player.graveyard, self.cardid2idx, False)
+        }
+        if hand:
+            feats["hand"] = _card2idlist(player.hand, self.cardid2idx, False )
 
-    def get_state():
-        pass
+        return feats
+
+    def push(self, game):
+        feat = {
+            "player":self._player_feats(game.learner, hand=True),
+            "oppponent":self._player_feats(game.opponent, hand=False)
+        }
+        self.features.append(feat)
+
+    def get_state(self):
+        return self.features[-self.length:]
 
 class Env(Game):
     def __init__(self, learner, opponent, first=True, logging=logging):
