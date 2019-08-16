@@ -1,3 +1,7 @@
+# test
+# winning state
+
+
 from mtg.game import Game
 from mtg.settings import *
 
@@ -202,8 +206,9 @@ class Env(Game):
         while True:
             if self.playing_idx == 0: # learner's turn
                 # upkeep
-                self._upkeep(self.learner, push_f=False) # push_=T to add feature
-                self._draw(self.learner, push_f=False)
+                self._upkeep(self.learner)
+                self._draw(self.learner)
+                self.feature_holder.push(self)
                 
                 # main
                 self.set_phase(MAIN)
@@ -213,8 +218,9 @@ class Env(Game):
                         nextstate, reward = self._prevNS_prevR()
                         yield state, action, nextstate, reward, possible_actions
 
-                        state = self.get_state()
+                        state = self.feature_holder.get_state()
                         action = self.learner.cast_action(state, possible_actions)
+                        self.feature_holder.push(self)
                         if action is None:
                             break
                     else:
@@ -227,8 +233,9 @@ class Env(Game):
                     nextstate, reward = self._prevNS_prevR()
                     yield state, action, nextstate, reward, possible_actions
 
-                    state = self.get_state()
+                    state = self.feature_holder.get_state()
                     action = self.learner.attack_action(state, possible_actions)
+                    self.feature_holder.push(self)
 
                     # block
                     self._block(self.opponent, push_f=False)
@@ -238,6 +245,7 @@ class Env(Game):
 
                     # damage
                     self._damage(self.learner, self.opponent, push_f=False)
+                    self.feature_holder.push(self)
 
                 # MAIN2
                 self.set_phase(MAIN2)
@@ -249,20 +257,23 @@ class Env(Game):
 
                         state = self.feature_holder.get_state()
                         action = self.learner.cast_action(state, possible_actions)
+                        self.feature_holder.push(self)
                         if action is None:
                             break
                     else:
                         break
-
+                
                 self._end()
                     
             else: # opponent's turn
                 self._upkeep(self.opponent, push_f=False)
                 self._draw(self.opponent, push_f=False)
                 self._main(self.opponent)
+                self.feature_holder.push(self)
 
                 # attack
                 self._attack(self.opponent)
+                self.feature_holder.push(self)
 
                 # block
                 self.set_phase(BLOCK)
@@ -276,7 +287,12 @@ class Env(Game):
 
                 self._assign(self.opponent)
                 self._damage(self.opponent, self.learner)
+                self.feature_holder.push(self)
+
+
                 self._main2(self.opponent)
+                self.feature_holder.push(self)
+
                 self._end()
                 
             
