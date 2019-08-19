@@ -1,8 +1,3 @@
-# test
-# winning state
-# win to reward
-
-
 from mtg.game import Game
 from mtg.settings import *
 
@@ -250,13 +245,21 @@ class Env(Game):
                     self.feature_holder.push(self)
 
                     # block
-                    _ = self._block(self.opponent, push_f=False)
+                    _ = self._block(self.opponent)
 
                     # assign
-                    _ = self._assign(self.learner, push_f=False)
+                    _ = self._assign(self.learner)
 
                     # damage (learner to opponent)
-                    win_flg = self._damage(self.learner, self.opponent, push_f=False)
+                    win_flg = self._damage(self.learner, self.opponent)
+
+                    ##################################
+                    if win_flg > 0: # win (LL)
+                        _, reward = self._prevNS_prevR()
+                        reward += self.win_reward
+                        yield state, action, None, reward, None
+                        break
+                    ##################################
                     self.feature_holder.push(self)
 
                 # MAIN2
@@ -278,13 +281,20 @@ class Env(Game):
                 self._end()
                     
             else: # opponent's turn
-                self._upkeep(self.opponent, push_f=False)
-                self._draw(self.opponent, push_f=False)
-                self._main(self.opponent)
+                _ = self._upkeep(self.opponent)
+                win_flg = self._draw(self.opponent)
+                #################################
+                if win_flg < 0: # opponent lose = win (LO)
+                    _, reward = self._prevNS_prevR()
+                    reward += self.win_reward
+                    yield state, action, None, reward, None
+                    break
+                ##################################
+                _ = self._main(self.opponent)
                 self.feature_holder.push(self)
 
                 # attack
-                self._attack(self.opponent)
+                _ = self._attack(self.opponent)
                 self.feature_holder.push(self)
 
                 # block
@@ -297,15 +307,22 @@ class Env(Game):
                     state = self.feature_holder.get_state()
                     action = self.learner.block_action(state, possible_actions)
 
-                self._assign(self.opponent)
-                self._damage(self.opponent, self.learner)
+                _ = self._assign(self.opponent)
+                win_flg = self._damage(self.opponent, self.learner)
+                #################################
+                if win_flg > 0: # opponent win = lose (LL)
+                    _, reward = self._prevNS_prevR()
+                    reward += self.lose_reward
+                    yield state, action, None, reward, None
+                    break
+                ##################################
                 self.feature_holder.push(self)
 
 
-                self._main2(self.opponent)
+                _ = self._main2(self.opponent)
                 self.feature_holder.push(self)
 
-                self._end()
+                _ = self._end()
                 
             
             self.playing_idx = 1 - self.playing_idx
