@@ -1,5 +1,6 @@
 # test
 # winning state
+# win to reward
 
 
 from mtg.game import Game
@@ -78,10 +79,14 @@ class FeatureHolder(object):
         return self.features[-self.length:]
 
 class Env(Game):
-    def __init__(self, learner, opponent, cardid2idx, feat_length, first=True, logging=logging):
+    def __init__(self, learner, opponent, cardid2idx, feat_length, 
+        first=True, logging=logging, win_reward=20, lose_reward=-20):
         super(Env, self).__init__([learner, opponent], logging=logging)
         self.learner = learner
         self.opponent = opponent
+        
+        self.win_reward = win_reward
+        self.lose_reward = lose_reward
         
         if not first:
             self.playing_idx = 1
@@ -206,8 +211,15 @@ class Env(Game):
         while True:
             if self.playing_idx == 0: # learner's turn
                 # upkeep
-                self._upkeep(self.learner)
-                self._draw(self.learner)
+                _ = self._upkeep(self.learner)
+                win_flg = self._draw(self.learner)
+                #################################
+                if win_flg < 0: # lose (LO)
+                    _, reward = self._prevNS_prevR()
+                    reward += self.lose_reward
+                    yield state, action, None, reward, None
+                    break
+                ##################################
                 self.feature_holder.push(self)
                 
                 # main
@@ -238,13 +250,13 @@ class Env(Game):
                     self.feature_holder.push(self)
 
                     # block
-                    self._block(self.opponent, push_f=False)
+                    _ = self._block(self.opponent, push_f=False)
 
                     # assign
-                    self._assign(self.learner, push_f=False)
+                    _ = self._assign(self.learner, push_f=False)
 
-                    # damage
-                    self._damage(self.learner, self.opponent, push_f=False)
+                    # damage (learner to opponent)
+                    win_flg = self._damage(self.learner, self.opponent, push_f=False)
                     self.feature_holder.push(self)
 
                 # MAIN2

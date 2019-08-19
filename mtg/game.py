@@ -80,11 +80,16 @@ class Game():
         self.set_phase(UPKEEP)
         player.battlefield.untap_all()
 
+        return 0
+
     def _draw(self, player):
         # draw
+        win_flg = 0
         self.set_phase(DRAW)
         if self.n_turn > 0:
-            player.draw(1)
+            win_flg = player.draw(1)
+        return win_flg
+            
 
     def _main(self, player):
         # main1
@@ -93,30 +98,36 @@ class Game():
             if player.cast_command(self) == 0:
                 break
             # there is no instant card yet,
+        return 0
 
     def _attack(self, player):
         # battle
         self.set_phase(ATTACK)
         player.attack_command(self)
+        return 0
 
     def _block(self, blocking_player):
         self.set_phase(BLOCK)
         blocking_player.block_command(self)
+        return 0
 
     def _assign(self, player):
         self.set_phase(ASSIGN, show_bf=False)
         player.assign_damages_command(self)
+        return 0
 
     def _damage(self, player, opponent):
         self.set_phase(DAMAGE, show_bf=False)
         damages2opponent = self.battle_ctrl.exec_damages()
         total_damage = sum([x[1] for x in damages2opponent])
-        opponent.damaged(total_damage)
+        opponent_win_flg = opponent.damaged(total_damage)
 
         self._burial_corpses(player)
         self._burial_corpses(opponent)
 
         self.battle_ctrl.reset()
+
+        return -1 * opponent_win_flg
 
     def _main2(self, player):
         # main2
@@ -125,10 +136,12 @@ class Game():
             if player.cast_command(self) == 0:
                 break
             # there is no instant card yet,
+        return 0
 
     def _end(self):
         self._end_turn()
         self.n_turn += 1
+        return 0
         
             
     def _turn(self):
@@ -138,25 +151,32 @@ class Game():
         
         # fix summon sick
         # upkeep
-        self._upkeep(player)
+        _ = self._upkeep(player)
 
         # draw
-        self._draw(player)
+        win_flg = self._draw(player)
+        if win_flg != 0:
+            return "LO", win_flg 
+
 
         # main1
-        self._main(player)
+        _ = self._main(player)
 
         # battle
-        self._attack(player)
-        self._block(opponent)
-        self._assign(player)
-        self._damage(player, opponent)
+        _ = self._attack(player)
+        _ = self._block(opponent)
+        _ = self._assign(player)
+        win_flg = self._damage(player, opponent)
+        if win_flg != 0:
+            return "LL", win_flg
         
         # main2
-        self._main2(player)
+        _ = self._main2(player)
         
         # end
-        self._end()
+        _ = self._end()
+
+        return None, 0
         
 
     def main(self):
@@ -166,7 +186,13 @@ class Game():
         #try:    
         nturn = 0
         while True:
-            self._turn()
+            win_condition, win_flg = self._turn()
+            if win_flg == 1:
+                print("player %d WIN (%s)" % (self.playing_idx, win_condition))
+                break 
+            elif win_flg == -1:
+                print("player %d WIN (%s)" % (1 - self.playing_idx, win_condition))
+                break 
             self.playing_idx = 1 - self.playing_idx
             nturn += 1
         #except Exception as e:

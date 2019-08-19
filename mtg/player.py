@@ -73,19 +73,24 @@ class Player():
         self.log_info("hand " + str(self.hand))
         
     def draw(self, n):
+        win_flg = 0
         self.log_info("draw")
         drawed = self.library.pop_top(n)
         if len(drawed) > 0:
             self.hand.extend(drawed)
         else:
-            raise Exception("Player%d loses, LO" % self.id)
+            win_flg = -1
+            #raise Exception("Player%d loses, LO" % self.id)
         self.log_info("hand " + str(self.hand))
+        return win_flg
 
     def damaged(self, n):
         self.life -= n
         self.log_info("damaged %d life %d" % (n, self.life))
-        if self.life <= 0:
-            raise Exception("Player%d is dead" % self.id)
+        if self.life < 0:
+            return -1
+        else:
+            return 0
 
     def _cast_from_hand(self, card, game):
         # to be implemented in Game class ?
