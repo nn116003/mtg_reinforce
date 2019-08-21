@@ -85,7 +85,7 @@ class Player():
     def damaged(self, n):
         self.life -= n
         self.log_info("damaged %d life %d" % (n, self.life))
-        if self.life < 0:
+        if self.life <= 0:
             return -1
         else:
             return 0
@@ -126,6 +126,8 @@ class Player():
     #    pass
 
     def _assign_damage(self, attacker, blockers, game):
+        # sample toughness < power
+        # decending toughness
         if len(blockers) > 0:
             damage = [0] * len(blockers)
             damage[0] = attacker.power
