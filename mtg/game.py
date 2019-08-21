@@ -36,7 +36,7 @@ class Game():
                             (self.n_turn, self.playing_idx+1) + mes)
 
     def _init_draw(self):
-        [player.init_draw(INIT_DRAW) for player in self.players]
+        [player.init_draw() for player in self.players]
 
     def _burial_corpses(self, player):
         dead_creatures = [creature for

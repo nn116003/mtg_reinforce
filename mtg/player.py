@@ -13,7 +13,7 @@ class Player():
         self.deck = deck
         self.library = Library(deck)
         #self.shuffle()
-        self.hand = None
+        self.hand = Hand([])
         
         self.battlefield = BattleField()
         self.graveyard = Graveyard()
@@ -32,7 +32,7 @@ class Player():
             self.deck = deck
             self.library = Library(deck)
             
-        self.hand = None
+        self.hand = Hand([])
         
         self.battlefield = BattleField()
         self.graveyard = Graveyard()
@@ -67,10 +67,8 @@ class Player():
     def castable_card(self, game):
         return {"hand":self.hand.playable(game, self)}
 
-    def init_draw(self, n):
-        self.log_info("init_draw")
-        self.hand = Hand(self.library.pop_top(n))
-        self.log_info("hand " + str(self.hand))
+    def init_draw(self):
+        self.draw(INIT_DRAW)
         
     def draw(self, n):
         win_flg = 0
