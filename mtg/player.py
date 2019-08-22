@@ -122,15 +122,24 @@ class Player():
     def _pick_attack_creatures(self, game):
         return []
 
-    #def _pick_block_creature(self, attacker, blockables, game):
-    #    pass
-
     def _assign_damage(self, attacker, blockers, game):
-        # sample toughness < power
-        # decending toughness
+        # Among creatures that can be killed, assign damage from the biggest toughness ones
         if len(blockers) > 0:
             damage = [0] * len(blockers)
-            damage[0] = attacker.power
+
+            b_toughness = [(i, b.toughness) for i, b in enumerate(blockers)]
+            sorted_list = sorted(b_toughness, key=lambda tmp: tmp[1] ,reverse=True)
+
+            power = attacker.power
+            for idx, toughness in sorted_list:
+                if toughness <= attacker.power: # can kill
+                    damage[idx] += min(toughness, power)
+                    power -= toughness
+                    if power <= 0:
+                        break
+            if power > 0: # there is no killable creature
+                damage[-1] += power
+
             return damage
         return []
 

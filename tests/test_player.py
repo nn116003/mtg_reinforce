@@ -1,5 +1,3 @@
-# _assign_damage clever
-
 from mtg import game, player, utils
 from mtg.settings import *
 from mtg.cards import Land, Creature, WrathG
@@ -140,23 +138,53 @@ class TestPlayer(unittest.TestCase):
         pass
     
     def test_battle(self):
-        creatures1 = [Creature(1,1,1,1,1),Creature(2,2,2,2,2),Creature(3,3,3,3,3),Creature(4,4,4,4,4)]
+        creatures1 = [Creature(4,4,4,4,4),Creature(2,2,2,2,2),Creature(3,3,3,3,3),Creature(1,1,1,1,1)]
+        for c in creatures1:
+            c.summon_sick = False 
         creatures2 = [Creature(1,1,1,1,1),Creature(2,2,2,2,2),Creature(3,3,3,3,3)]
         self.p1.battlefield.cratures = creatures1
         self.p2.battlefield.cratures = creatures2
 
         # attack creatures1[0~2],
-        # creatures2[2] block creatures1[1]
-        # creatures2[0~1] block creatures[2]
+        # creatures2[2] block creatures1[0]
+        # creatures2[0~1] block creatures1[2]
         def a(_):
             return creatures1[:3]
         self.p1._pick_attack_creatures = a
         def b(_,__):
             return [
-                [],
-                [creatures2[2]],
-                [creatures2[0],creatures2[1]]
+                [creatures2[2]],# 4/4 is blocked by 3/3
+                [], # 2/2 not blocked
+                [creatures2[0],creatures2[1]] # 3/3 is blocked by 1/1 and 2/2
                 ]
         self.p2._pick_attack_creatures = b
+
+        # attack command
+        self.p1.attack_command(self.game)
+        self.assertTrue(creatures1[0].is_tapped())
+        self.assertTrue(creatures1[1].is_tapped())
+        self.assertTrue(creatures1[2].is_tapped())
+        self.assertFalse(creatures1[3].is_tapped())
+        att_set = set([battle['attacker'] for battle in self.game.battle_ctrl.battles])
+        self.assertEqual(att_set, creatures1[:3])
+
+        # block command
+        self.p2.block_command(self.game)
+        self.assertEqual(3, self.game.battle_ctrl.battles)
+        self.assertIn({"attackers":creatures1[0], 'blockers':[creatures2[2]]}, self.game.battle_ctrl.battles)
+        self.assertIn({"attackers":creatures1[1], 'blockers':[]}, self.game.battle_ctrl.battles)
+        self.assertIn({"attackers":creatures1[2], 'blockers':[creatures2[0], creatures2[1]]}, self.game.battle_ctrl.battles)
+
+        # assign command
+        self.p1.assign_damages_command(self.game)
+        self.assertEqual(3, self.game.battle_ctrl.battles)
+        self.assertIn({"attackers":creatures1[0], 'blockers':[creatures2[2]], 'a2b':[4]}, 
+                        self.game.battle_ctrl.battles)
+        self.assertIn({"attackers":creatures1[1], 'blockers':[], 'a2b':[]}, 
+                        self.game.battle_ctrl.battles)
+        self.assertIn({"attackers":creatures1[2], 'blockers':[creatures2[0], creatures2[1]], 'a2b':[1,2]}, 
+                        self.game.battle_ctrl.battles)
+
+        
         
 
