@@ -21,19 +21,19 @@ class TestPlayer(unittest.TestCase):
     def test_reset(self):
         self.p1.life -= 10
         self.p1.hand = self.p1.library.pop_top(10)
-        self.p1.battlefield.creatures.add(Creature(1,1,1,1,1))
-        self.p1.graveyard.add(Creature(1,1,1,1,1))
-        self.p1.battlefield.lands.add(Land(99,'land'))
+        self.p1.battlefield.creatures.append(Creature(1,1,1,1,1))
+        self.p1.graveyard.append(Creature(1,1,1,1,1))
+        self.p1.battlefield.lands.append(Land(99,'land'))
         self.p1.n_played_lands += 1
 
         self.p1.reset()
         self.assertEqual(len(self.p1.library), len(self.deck1))
         self.assertEqual(self.p1.life, LIFE)
-        self.assertIsNone(self.p1.hand)
+        self.assertEqual(len(self.p1.hand), 0)
         self.assertEqual(len(self.p1.battlefield.creatures), 0)
         self.assertEqual(len(self.p1.battlefield.lands), 0)
         self.assertEqual(len(self.p1.graveyard), 0)
-        self.assertEqual(self.p1.n_playable_lands, 0)
+        self.assertEqual(self.p1.n_played_lands, 0)
 
     def test_mana_available(self):
         tap_land = Land(99,'Land')
@@ -41,7 +41,7 @@ class TestPlayer(unittest.TestCase):
         untap_land = Land(99,'Land')
 
         self.p1.battlefield.lands.extend([tap_land, untap_land])
-        self.p1.battlefield.manapool += 2
+        self.p1.battlefield.manapool.add(2)
 
         self.assertEqual(self.p1.mana_available(), 3)
 
@@ -57,6 +57,8 @@ class TestPlayer(unittest.TestCase):
         self.p1.battlefield.lands.append(land_b2)
         land_b1.tap()
 
+        self.game.phase = MAIN1
+        self.game.playing_idx = 0
         playables = self.p1.castable_card(self.game)
         self.assertEqual(set(playables['hand']), set([c1, land_h]))
 
@@ -76,7 +78,8 @@ class TestPlayer(unittest.TestCase):
 
         self.assertEqual(flg, 0)
         self.assertEqual(set(topn), set(self.p1.hand))
-        self.assertEqual(set(self.p1.library), set(lib[n:]))
+        self.assertEqual([c.id for c in self.p1.library], 
+                        [c.id for c in lib[n:]])
         
         flg = self.p1.draw(99999999)
         self.assertEqual(flg, -1)
@@ -157,7 +160,7 @@ class TestPlayer(unittest.TestCase):
                 [], # 2/2 not blocked
                 [creatures2[0],creatures2[1]] # 3/3 is blocked by 1/1 and 2/2
                 ]
-        self.p2._pick_attack_creatures = b
+        self.p2._pick_block_creatures = b
 
         # attack command
         self.p1.attack_command(self.game)
@@ -166,25 +169,26 @@ class TestPlayer(unittest.TestCase):
         self.assertTrue(creatures1[2].is_tapped())
         self.assertFalse(creatures1[3].is_tapped())
         att_set = set([battle['attacker'] for battle in self.game.battle_ctrl.battles])
-        self.assertEqual(att_set, creatures1[:3])
+        self.assertEqual(att_set, set(creatures1[:3]))
 
         # block command
         self.p2.block_command(self.game)
-        self.assertEqual(3, self.game.battle_ctrl.battles)
-        self.assertIn({"attackers":creatures1[0], 'blockers':[creatures2[2]]}, self.game.battle_ctrl.battles)
-        self.assertIn({"attackers":creatures1[1], 'blockers':[]}, self.game.battle_ctrl.battles)
-        self.assertIn({"attackers":creatures1[2], 'blockers':[creatures2[0], creatures2[1]]}, self.game.battle_ctrl.battles)
+        self.assertEqual(3, len(self.game.battle_ctrl.battles))
+        self.assertIn({"attacker":creatures1[0], 'blockers':[creatures2[2]]}, self.game.battle_ctrl.battles)
+        self.assertIn({"attacker":creatures1[1], 'blockers':[]}, self.game.battle_ctrl.battles)
+        self.assertIn({"attacker":creatures1[2], 'blockers':[creatures2[0], creatures2[1]]}, self.game.battle_ctrl.battles)
 
         # assign command
         self.p1.assign_damages_command(self.game)
-        self.assertEqual(3, self.game.battle_ctrl.battles)
-        self.assertIn({"attackers":creatures1[0], 'blockers':[creatures2[2]], 'a2b':[4]}, 
+        self.assertEqual(3, len(self.game.battle_ctrl.battles))
+        self.assertIn({"attacker":creatures1[0], 'blockers':[creatures2[2]], 'a2b':[4]}, 
                         self.game.battle_ctrl.battles)
-        self.assertIn({"attackers":creatures1[1], 'blockers':[], 'a2b':[]}, 
+        self.assertIn({"attacker":creatures1[1], 'blockers':[], 'a2b':[]}, 
                         self.game.battle_ctrl.battles)
-        self.assertIn({"attackers":creatures1[2], 'blockers':[creatures2[0], creatures2[1]], 'a2b':[1,2]}, 
+        self.assertIn({"attacker":creatures1[2], 'blockers':[creatures2[0], creatures2[1]], 'a2b':[1,2]}, 
                         self.game.battle_ctrl.battles)
 
         
-        
+if __name__ == "__main__":
+    unittest.main()
 
