@@ -14,7 +14,7 @@ class CardEncoder(nn.Module):
 
 class GameEncoder(nn.Module):
     def __init__(self, in_d, out_d):
-        super(CardEncoder, self).__init__()
+        super(GameEncoder, self).__init__()
 
     def forward(self, x):
         pass

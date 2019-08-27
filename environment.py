@@ -113,40 +113,7 @@ class Env(Game):
             self.opponent.reset()
         self.feature_holder.reset()
 
-    def _possible_actions(self, player):
-        if self.phase is in [MAIN, MAIN2]:
-            return [card.id for card in player.castable_caard(self)["hand"]]
 
-        elif self.phase == ATTACK:
-            attackable_creatures = player.battlefield.get_attackable_creatures()
-            ac_ids = [card.id for card in attackable_creatures]
-            if len(ac_ids) > 0:
-                comb = []
-                for i in range(len(ac_ids)):
-                    comb.extend(itertools.combinations(ac_ids, i+1))
-                return comb
-            else:
-                return []
-
-        elif self.phase == BLOCK:
-            ac_num = len(self.battle_ctrl.battles )
-            blockable_creatures = player.battlefield.get_untap_creatures()
-            bc_ids = [card.id for card in blockable_creatures ]
-            if ac_num  > 0 and len(bc_ids) > 0:
-                block_targets = list(range(ac_num + 1)) # +1: not block
-                block_patterns = itertools.product(
-                    *([block_targts]*len(bc_ids))
-                    )
-                res = []
-                for pattern in block_patterns:
-                    block_list = [[] for i in range(ac_num)]
-                    for bc_id, b_target in zip(bc_ids, pattern)
-                        if b_target < ac_num:
-                            block_list[b_target].append(bc_id)
-                    res.append(block_list)
-                return res
-            else:
-                return []
 
 
     def _snapshot(self):
@@ -218,7 +185,7 @@ class Env(Game):
                 self.feature_holder.push(self)
                 
                 # main
-                self.set_phase(MAIN)
+                self.set_phase(MAIN1)
                 while True:
                     possible_actions = self._possible_actions(self.learner)
                     if len(possible_actions) > 0:
