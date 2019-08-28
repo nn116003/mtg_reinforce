@@ -65,6 +65,7 @@ class FeatureHolder(object):
 
     def push(self, game):
         feat = {
+            "phase":game.phase,
             "player":self._player_feats(game.learner, hand=True),
             "oppponent":self._player_feats(game.opponent, hand=False)
         }
@@ -159,8 +160,8 @@ class Env(Game):
         
     def main(self):
         """
-        for state, action, next_state, reward, done in env.main():
-            memory.push(state, action, next_state, reward)
+        for state, state_pahse, action, next_state, next_state_phase, reward, possible_actions in env.main():
+            memory.push(.....)
             env.learner.update(memory)
         
         """
@@ -170,6 +171,9 @@ class Env(Game):
         [player.shuffle() for player in self.players]
         self._init_draw()
         nturn = 0
+        state = None
+        action = None 
+
         while True:
             if self.playing_idx == 0: # learner's turn
                 # upkeep
@@ -190,7 +194,8 @@ class Env(Game):
                     possible_actions = self._possible_actions(self.learner)
                     if len(possible_actions) > 0:
                         nextstate, reward = self._prevNS_prevR()
-                        yield state, action, nextstate, reward, possible_actions
+                        if state is not None:
+                            yield state, action, nextstate, reward, possible_actions
 
                         state = self.feature_holder.get_state()
                         action = self.learner.cast_action(state, possible_actions)
@@ -235,7 +240,8 @@ class Env(Game):
                     possible_actions = self._possible_actions(self.learner)
                     if len(possible_actions) > 0:
                         nextstate, reward = self._prevNS_prevR()
-                        yield state, action, nextstate, reward, possible_actions
+                        if state is not None:
+                            yield state, action, nextstate, reward, possible_actions
 
                         state = self.feature_holder.get_state()
                         action = self.learner.cast_action(state, possible_actions)
@@ -266,7 +272,7 @@ class Env(Game):
 
                 # block
                 self.set_phase(BLOCK)
-                possible_actions = self._possible_action(self.learner)
+                possible_actions = self._possible_actions(self.learner)
                 if len(possible_actions) > 0:
                     nextstate, reward = self._prevNS_prevR()
                     yield state, action, nextstate, reward, possible_actions
