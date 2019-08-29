@@ -65,6 +65,7 @@ class FeatureHolder(object):
 
     def push(self, game):
         feat = {
+            "playing_idx":game.playing_idx,
             "phase":game.phase,
             "player":self._player_feats(game.learner, hand=True),
             "oppponent":self._player_feats(game.opponent, hand=False)
@@ -172,6 +173,7 @@ class Env(Game):
         self._init_draw()
         nturn = 0
         state = None
+        state_phase = None
         action = None 
 
         while True:
@@ -183,7 +185,7 @@ class Env(Game):
                 if win_flg < 0: # lose (LO)
                     _, reward = self._prevNS_prevR()
                     reward += self.lose_reward
-                    yield state, action, None, reward, None
+                    yield state, state_phase, action, None, None, reward, None
                     break
                 ##################################
                 self.feature_holder.push(self)
@@ -195,9 +197,10 @@ class Env(Game):
                     if len(possible_actions) > 0:
                         nextstate, reward = self._prevNS_prevR()
                         if state is not None:
-                            yield state, action, nextstate, reward, possible_actions
+                            yield state, state_phase, action, nextstate, MAIN1, reward, possible_actions
 
                         state = self.feature_holder.get_state()
+                        state_phase = MAIN1
                         action = self.learner.cast_action(state, possible_actions)
                         self.feature_holder.push(self)
                         if action is None:
@@ -210,9 +213,10 @@ class Env(Game):
                 possible_actions = self._possible_actions(self.learner)
                 if len(possible_actions) > 0:
                     nextstate, reward = self._prevNS_prevR()
-                    yield state, action, nextstate, reward, possible_actions
+                    yield state, state_phase, action, nextstate, ATTACK, reward, possible_actions
 
                     state = self.feature_holder.get_state()
+                    state_phase = ATTACK 
                     action = self.learner.attack_action(state, possible_actions)
                     self.feature_holder.push(self)
 
@@ -229,7 +233,7 @@ class Env(Game):
                     if win_flg > 0: # win (LL)
                         _, reward = self._prevNS_prevR()
                         reward += self.win_reward
-                        yield state, action, None, reward, None
+                        yield state, state_phase, action, None, None, reward, None
                         break
                     ##################################
                     self.feature_holder.push(self)
@@ -241,9 +245,10 @@ class Env(Game):
                     if len(possible_actions) > 0:
                         nextstate, reward = self._prevNS_prevR()
                         if state is not None:
-                            yield state, action, nextstate, reward, possible_actions
+                            yield state, state_phase, action, nextstate, MAIN2, reward, possible_actions
 
                         state = self.feature_holder.get_state()
+                        state_phase = MAIN2 
                         action = self.learner.cast_action(state, possible_actions)
                         self.feature_holder.push(self)
                         if action is None:
@@ -260,7 +265,7 @@ class Env(Game):
                 if win_flg < 0: # opponent lose = win (LO)
                     _, reward = self._prevNS_prevR()
                     reward += self.win_reward
-                    yield state, action, None, reward, None
+                    yield state, state_phase, action, None, None, reward, None
                     break
                 ##################################
                 _ = self._main(self.opponent)
@@ -275,9 +280,10 @@ class Env(Game):
                 possible_actions = self._possible_actions(self.learner)
                 if len(possible_actions) > 0:
                     nextstate, reward = self._prevNS_prevR()
-                    yield state, action, nextstate, reward, possible_actions
+                    yield state, state_phase, action, nextstate, BLOCK, reward, possible_actions
 
                     state = self.feature_holder.get_state()
+                    state_phase = BLOCK
                     action = self.learner.block_action(state, possible_actions)
 
                 _ = self._assign(self.opponent)
@@ -286,7 +292,7 @@ class Env(Game):
                 if win_flg > 0: # opponent win = lose (LL)
                     _, reward = self._prevNS_prevR()
                     reward += self.lose_reward
-                    yield state, action, None, reward, None
+                    yield state, state_phase, action, None, None, reward, None
                     break
                 ##################################
                 self.feature_holder.push(self)
