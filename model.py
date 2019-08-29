@@ -7,17 +7,22 @@ import torch.nn.functional as F
 
 class FCGameEncoder(nn.Module):
     def __init__(self, out_d, 
-        card_embedding=None, card_num=None, emb_dim=12,
+        card_embedding=None, card_num=None, card_emb_dim=12,
         dense_feat_dim=5, phase_len=3, n_layer=2, nch=24):
         super(FCGameEncoder, self).__init__()
 
         if card_embedding is None:
-            self.card_embedding = nn.Embedding(card_num + 2, emb_dim) # Null card + padding idx
+            self.card_embedding = nn.Embedding(card_num + 2, card_emb_dim) # Null card + padding idx
         else:
             self.card_embedding = card_embedding
 
+        # phase emb
+        # playing idx
+        # fix _fix_state
+
         layers = []
-        first_input_dim = dense_feat_dim * phase_len * 2 + emb_dim * 5
+        first_input_dim = dense_feat_dim * phase_len * 2 + card_emb_dim * 5
+
         for i in range(n_layer):
             tmp_in = tmp_out = nch
             if i == 0:
