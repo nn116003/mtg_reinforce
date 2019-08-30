@@ -61,6 +61,17 @@ class ReplayMemory(object):
     def _pad(self, cards, max_len):
         return cards + [self.pad_id] * (max_len - len(cards))
 
+    def _pad_bf_creatures(self, creatures_data, max_len):
+        l = len(creatures_data)
+        creatures = [c[0] for c in creatures_data]
+        tap_flg = [c[1] for c in creatures_data]
+        sick_flg = [c[1] for c in creatures_data]
+        pad_c = self._pad(creatures, max_len)
+        pad_tap_flg = tap_flg + [0]*(max_len - l)
+        pad_sick_flg = sick_flg + [0]*(max_len - l)
+
+        return pad_c, pad_tap_flg, pad_sick_flg
+
     def _fix_action(self, action, phase):
         if phase in [MAIN1, MAIN2]:
             return action
@@ -71,31 +82,38 @@ class ReplayMemory(object):
             blockers = list(map(lambda x:self._pad(x, self.max_c), action["blockers"]))
             return (attackers, blockers)
 
+    def _fix_player_feat(self, feat):
+        res = {}
+        res["dense"] = [
+                feat['lands'][0], feat['lands'][1],
+                feat['n_hand'], feat['life'], feat['n_lib']
+                ]
+        p_c, p_tf, p_sf = self._pad_bf_creatures(feat['creatures'], self.max_c) 
+        res["creatures"] = p_c
+        res["tap_flg"] = p_tf
+        res["sick_flg"] = p_sf
+        res["gy"] = self._pad(feat['gy'], self.max_g)
+        if "hand" in feat:
+            res["hand"] = self._pad(feat['hand'], self.max_h)
+
+        return res
+
     def _fix_state(self, state):
-        res = {"player_dense":[], "opponent_dense":[],
-            "player_bf":[], "player_gy":[], "player_hand":[],
-            "opponent_bf":[], "opponent_gy":[], "phase_flg":[],
+        res = {
+            "player":{"dense":[],"creatures":[],"tap_flg":[],"sick_flg":[],"gy":[],"hand":[]},
+            "opponent":{"dense":[],"creatures":[],"tap_flg":[],"sick_flg":[],"gy":[]},
+            "phase":[],
             "playing_idx":[]
             }
         for feat in state:
-            p_feat = feat['player']
-            o_feat = feat['opponent']
-            res["player_dense"].append([
-                p_feat['lands'][0], p_feat['lands'][1],
-                p_feat['n_hand'], p_feat['life'], p_feat['n_lib']
-                ])
-            res["opponent_dense"].append([
-                o_feat['lands'][0], o_feat['lands'][1],
-                o_feat['n_hand'], o_feat['life'], o_feat['n_lib']
-                ])
-            res["player_bf"].append(self._pad(p_feat['creatures'], self.max_c))
-            res["opponent_bf"].append(self._pad(o_feat['creatures'], self.max_c))
-            res["player_gy"].append(self._pad(p_feat['gy'], self.max_g))
-            res["opponent_gy"].append(self._pad(o_feat['gy'], self.max_g))
-            res["player_hand"].append(self._pad(p_feat['hand'], self.max_h))
-
-            res['phase_flg'].append(feat['phase_flg'])
-            res['playing_idx'].append(feat['playing_idx'])
+            p_feat = self._fix_player_feat(feat["player"])
+            for k, v in p_feat.items():
+                res["player"][k].append(v)
+            o_feat = self._fix_player_feat(feat["opponent"])
+            for k, v in o_feat.items():
+                res["opponent"][k].append(v)
+            res["phase"].append(feat["phase"])
+            res["playing_idx"].append(feat["playing_idx"])
 
         return res
             

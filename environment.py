@@ -6,7 +6,8 @@ import numpy as np
 import itertools
 
 
-def _card2idlist(cards, cardid2idx, battlefield=False):
+def _card2idlist(cards, cardid2idx, 
+                battlefield=False, add_none=False, empty2none=True):
     result = []
     if battlefield:
         if len(cards) == 0:
@@ -16,35 +17,44 @@ def _card2idlist(cards, cardid2idx, battlefield=False):
                 tmp = [cardid2idx[card.id], 1-int(card.is_tapped()), int(card.summon_sick)]
                 result.append(tmp)
     else:
-        if len(cards) == 0:
-            result.append(cardid2idx["None"])
+        if len(cards) == 0 and empty2none:
+                result.append(cardid2idx["None"])
         else:
             [result.append(cardid2idx[card.id]) for card in cards]
+            if add_none:
+                result.append(cardid2idx["None"])
 
     return result 
         
 
 class FeatureHolder(object):
-    def __init__(self, length, cardid2idx):
+    def __init__(self, length, cardid2idx, phase2idx):
         self.cardid2idx = cardid2idx 
+        self.phase2idx = phase2idx
 
         self.length = length 
         self.features = []
         self.reset()
 
-    def reset(self):
-        self.features = []
-        for i in range(self.length):
-            feats = {
+    def _empty_feats(self, hand=False):
+        feats = {
                 "creatures": _card2idlist([], self.cardid2idx, True ),
                 "lands":[0, 0],
                 "n_hand":0,
                 "life":LIFE ,
                 "n_lib":DECK_NUM ,
                 "gy":_card2idlist([], self.cardid2idx, False),
-                "hand":_card2idlist([], self.cardid2idx, False)
             }
-            self.features.append({"player":feats, "opponent":feats})
+        if hand:
+            feats['hand'] = _card2idlist([], self.cardid2idx, False)
+        return feats
+
+    def reset(self):
+        #########
+        self.features = []
+        for i in range(self.length):
+            self.features.append(
+                {"player":feats, "opponent":feats})
 
     def _player_feats(self, player, hand=True):
         bf = player.battlefield
@@ -66,7 +76,7 @@ class FeatureHolder(object):
     def push(self, game):
         feat = {
             "playing_idx":game.playing_idx,
-            "phase":game.phase,
+            "phase":self.phase2idx(game.phase),
             "player":self._player_feats(game.learner, hand=True),
             "oppponent":self._player_feats(game.opponent, hand=False)
         }
@@ -76,7 +86,7 @@ class FeatureHolder(object):
         return self.features[-self.length:]
 
 class Env(Game):
-    def __init__(self, learner, opponent, cardid2idx, feat_length, 
+    def __init__(self, learner, opponent, cardid2idx, phase2idx, feat_length, 
         first=True, logging=logging, win_reward=20, lose_reward=-20):
         super(Env, self).__init__([learner, opponent], logging=logging)
         self.learner = learner
@@ -84,12 +94,13 @@ class Env(Game):
         
         self.win_reward = win_reward
         self.lose_reward = lose_reward
+        self.cardid2idx = cardid2idx
         
         if not first:
             self.playing_idx = 1
 
         # to save past n turn features
-        self.feature_holder = FeatureHolder(feat_length, cardid2idx )
+        self.feature_holder = FeatureHolder(feat_length, cardid2idx, phase2idx)
 
         # sanpshot  of game(not = feat, use to calc reward)
         self.prev_snapshot = {
@@ -115,7 +126,46 @@ class Env(Game):
             self.opponent.reset()
         self.feature_holder.reset()
 
+    def _possible_actions(self, player):
+        if self.phase in [MAIN1, MAIN2]:
+            return _card2idlist(player.castable_card(self)["hand"], 
+                        self.cardid2idx, add_none=True, empty2none=False) 
 
+        elif self.phase == ATTACK:
+            attackable_creatures = player.battlefield.get_attackable_creatures()
+            ac_ids = _card2idlist(attackable_creatures, self.cardid2idx, add_none=False, empty2none=False)
+            comb = []
+            if len(ac_ids) > 0: 
+                for i in range(len(ac_ids)):
+                    comb.extend(itertools.combinations(ac_ids, i+1))
+                comb.append([self.cardid2idx["None"]])
+            return comb
+
+        elif self.phase == BLOCK:
+            attackers = _card2idlist(self.battle_ctrl.get_attackers(), self.cardid2idx,
+                                    add_none=False, empty2none=False)
+            ac_num = len(attackers)
+            blockable_creatures = player.battlefield.get_untap_creatures()
+            bc_ids = _card2idlist(blockable_creatures, self.cardid2idx, add_none=False, empty2none=False)
+            
+            if ac_num  > 0 and len(bc_ids) > 0:
+                block_targets = list(range(ac_num + 1)) # +1: not block
+                block_patterns = itertools.product(
+                    *([block_targets]*len(bc_ids))
+                    )
+                res = []
+                for pattern in block_patterns:
+                    block_list = [[] for i in range(ac_num)]
+                    for bc_id, b_target in zip(bc_ids, pattern):
+                        if b_target < ac_num:
+                            block_list[b_target].append(bc_id)
+                    for b in block_list:
+                        if len(b) == 0:
+                            b.append(self.cardid2idx("None"))
+                    res.append(block_list)
+                return res
+            else:
+                return []
 
 
     def _snapshot(self):

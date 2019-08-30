@@ -10,6 +10,9 @@ class BattleController():
     def reset(self):
         self.battles = []
 
+    def get_attackers(self):
+        return [b['attacker'] for b in self.battles]
+
     def add_attackers(self, creatures):
         for creature in creatures:
             creature.tap()
