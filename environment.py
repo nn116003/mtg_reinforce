@@ -50,11 +50,11 @@ class FeatureHolder(object):
         return feats
 
     def reset(self):
-        #########
         self.features = []
         for i in range(self.length):
             self.features.append(
-                {"player":feats, "opponent":feats})
+                {"player":self._empty_feats(True), "opponent":self._empty_feats()}
+                )
 
     def _player_feats(self, player, hand=True):
         bf = player.battlefield
