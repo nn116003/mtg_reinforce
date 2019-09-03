@@ -116,13 +116,13 @@ class Player():
     def _attack(self, creatures, b_ctrl):
         b_ctrl.add_attackers(creatures)
 
-    def _pick_cast_card(self, game):
+    def _pick_cast_card(self, game,*args):
         return None  
 
-    def _pick_attack_creatures(self, game):
+    def _pick_attack_creatures(self, game,*args):
         return []
 
-    def _assign_damage(self, attacker, blockers, game):
+    def _assign_damage(self, attacker, blockers, game,*args):
         # Among creatures that can be killed, assign damage from the biggest toughness ones
         if len(blockers) > 0:
             damage = [0] * len(blockers)
@@ -144,11 +144,11 @@ class Player():
         return []
 
 
-    def _pick_block_creatures(self, attackers, game):
+    def _pick_block_creatures(self, attackers, game, *args):
         return [[]]*len(attackers)
 
-    def cast_command(self, game):
-        cast_card = self._pick_cast_card(game)
+    def cast_command(self, game, *args):
+        cast_card = self._pick_cast_card(game, *args)
         if cast_card is not None:
             self.log_info("cast_from_hand " + str(cast_card))
             self._cast_from_hand(cast_card, game)
@@ -156,24 +156,24 @@ class Player():
         else:
             return 0
 
-    def attack_command(self, game):
-        attack_creatures = self._pick_attack_creatures(game)
+    def attack_command(self, game, *args):
+        attack_creatures = self._pick_attack_creatures(game, *args)
         self.log_info("attack " + "-".join([str(card) for card in attack_creatures]))
         self._attack(attack_creatures, game.battle_ctrl)
         return 0
 
-    def block_command(self, game):
+    def block_command(self, game, *args):
         attackers = [battle['attacker'] for battle in game.battle_ctrl.battles]
-        blocker_list = self._pick_block_creatures(attackers, game)
+        blocker_list = self._pick_block_creatures(attackers, game, *args)
         game.battle_ctrl.add_blockers(blocker_list)
         self.log_info("block " + game.battle_ctrl.log_str_ab())
         return 0
 
-    def assign_damages_command(self, game):
+    def assign_damages_command(self, game, *args):
         #damage_list = self._assign_damages(game.battle_ctrl.battles, game)
         for battle in game.battle_ctrl.battles:
             battle['a2b'] = self._assign_damage(battle['attacker'],
-                                                battle['blockers'], game)
+                                                battle['blockers'], game,*args)
         self.log_info("assign_damages " + game.battle_ctrl.log_str_abd())
         return 0
 

@@ -74,12 +74,14 @@ class ReplayMemory(object):
 
     def _fix_action(self, action, phase):
         if phase in [MAIN1, MAIN2]:
-            return action
+            return torch.LongTensor([action])
         elif phase == ATTACK:
-            return self._pad(action, self.max_c)
+            return torch.LongTensor(self._pad(action, self.max_c))
         else: # block
-            attackers = self._pad(action["attackers"], self.max_c)
-            blockers = list(map(lambda x:self._pad(x, self.max_c), action["blockers"]))
+            attackers = torch.LongTensor(self._pad(action["attackers"], self.max_c))
+            blockers = torch.LongTensor(
+                list(map(lambda x:self._pad(x, self.max_c), action["blockers"]))
+            )
             return (attackers, blockers)
 
     def _fix_player_feat(self, feat):
@@ -87,7 +89,7 @@ class ReplayMemory(object):
         res["dense"] = [
                 feat['lands'][0], feat['lands'][1],
                 feat['n_hand'], feat['life'], feat['n_lib']
-                ]
+                ] 
         p_c, p_tf, p_sf = self._pad_bf_creatures(feat['creatures'], self.max_c) 
         res["creatures"] = p_c
         res["tap_flg"] = p_tf
@@ -97,6 +99,12 @@ class ReplayMemory(object):
             res["hand"] = self._pad(feat['hand'], self.max_h)
 
         return res
+
+    def _player_state2tensor(self, dict_of_list):
+        res = {}
+        res["dense"] = torch.Tensor(res["player"]["dence"])
+        res["creatures"] = torch.Tensor(res["player"][""])
+        ###############
 
     def _fix_state(self, state):
         res = {
