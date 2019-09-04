@@ -28,12 +28,12 @@ def _card2idlist(cards, cardid2idx,
         
 
 class FeatureHolder(object):
-    def __init__(self, length, cardid2idx, phase2idx):
+    def __init__(self, length, cardid2idx, phase2idx, first_play_idx):
         self.cardid2idx = cardid2idx 
         self.phase2idx = phase2idx
 
         self.length = length 
-        self.features = []
+        self.features = {}
         self.reset()
 
     def _empty_feats(self, hand=False):
@@ -49,12 +49,27 @@ class FeatureHolder(object):
             feats['hand'] = _card2idlist([], self.cardid2idx, False)
         return feats
 
+    def _add_features(self, p_feat, o_feat, phase, playing_idx):
+        for k in o_feat:
+            self.features['player'][k].append(p_feat[k])
+            self.features['opponent'][k].append(o_feat[k])
+        self.features['player']['hand'].append(p_feat['hand'])
+        self.features['phase'].append(self.phase2idx(phase))
+        self.features['playing_idx'].append(playing_idx)
+
     def reset(self):
-        self.features = []
+        self.features = {
+            "player":dict.fromkeys(["dense","creatures","tap_flg","sick_flg","gy","hand"], []),
+            "opponent":dict.fromkeys(["dense","creatures","tap_flg","sick_flg","gy"], []),
+            "phase":[],
+            "playing_idx":[]
+            }
         for i in range(self.length):
-            self.features.append(
-                {"player":self._empty_feats(True), "opponent":self._empty_feats()}
-                )
+            p_default = self._empty_feats(True)
+            o_default = self._empty_feats()
+            self._add_features(p_default, o_default, 
+                UPKEEP, self.first_play_idx)
+            
 
     def _player_feats(self, player, hand=True):
         bf = player.battlefield
@@ -74,16 +89,22 @@ class FeatureHolder(object):
         return feats
 
     def push(self, game):
-        feat = {
-            "playing_idx":game.playing_idx,
-            "phase":self.phase2idx(game.phase),
-            "player":self._player_feats(game.learner, hand=True),
-            "oppponent":self._player_feats(game.opponent, hand=False)
-        }
-        self.features.append(feat)
+        self._add_features(
+            self._player_feats(game.learner, hand=True),
+            self._player_feats(game.opponent, hand=False),
+            game.phase,
+            game.playing_idx)
 
     def get_state(self):
-        return self.features[-self.length:]
+        res = {'player':{}, 'opponent':[]}
+        for k in self.features['opponent']:
+            res['player'][k] = self.features['player'][k][-self.length:]
+            res['opponent'][k] = self.features['opponent'][k][-self.length:]
+        res['player']['hand'] = self.features['player']['hand'][-self.length:]
+        res['phase'] = self.features['phase'][-self.length:]
+        res['playing_idx'] = self.features['playing_idx'][-self.length:]
+            
+        return res
 
 class Env(Game):
     def __init__(self, learner, opponent, cardid2idx, phase2idx, feat_length, 
@@ -100,7 +121,7 @@ class Env(Game):
             self.playing_idx = 1
 
         # to save past n turn features
-        self.feature_holder = FeatureHolder(feat_length, cardid2idx, phase2idx)
+        self.feature_holder = FeatureHolder(feat_length, cardid2idx, phase2idx, self.playing_idx)
 
         # sanpshot  of game(not = feat, use to calc reward)
         self.prev_snapshot = {

@@ -4,7 +4,6 @@ import torch
 import torch.nn.functional as F
 
 import random
-from collections import namedtuple
 
 from mtg.settings import *
 
@@ -59,9 +58,11 @@ class ReplayMemory(object):
         return random.sample(self.memory, batch_size)
 
     def _pad(self, cards, max_len):
+        # to utils ?
         return cards + [self.pad_id] * (max_len - len(cards))
 
     def _pad_bf_creatures(self, creatures_data, max_len):
+        # to utils ?
         l = len(creatures_data)
         creatures = [c[0] for c in creatures_data]
         tap_flg = [c[1] for c in creatures_data]
@@ -85,6 +86,7 @@ class ReplayMemory(object):
             return (attackers, blockers)
 
     def _fix_player_feat(self, feat):
+        # TODO to utils?
         res = {}
         res["dense"] = [
                 feat['lands'][0], feat['lands'][1],
@@ -107,6 +109,7 @@ class ReplayMemory(object):
         ###############
 
     def _fix_state(self, state):
+        # TODO to utils?
         res = {
             "player":{"dense":[],"creatures":[],"tap_flg":[],"sick_flg":[],"gy":[],"hand":[]},
             "opponent":{"dense":[],"creatures":[],"tap_flg":[],"sick_flg":[],"gy":[]},
