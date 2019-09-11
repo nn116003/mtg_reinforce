@@ -1,110 +1,11 @@
 from mtg.game import Game
 from mtg.settings import *
+import utils
 
 import logging
 import numpy as np
 import itertools
-
-
-def _card2idlist(cards, cardid2idx, 
-                battlefield=False, add_none=False, empty2none=True):
-    result = []
-    if battlefield:
-        if len(cards) == 0:
-            result.append([cardid2idx["None"], 0, 0])
-        else:
-            for card in cards:
-                tmp = [cardid2idx[card.id], 1-int(card.is_tapped()), int(card.summon_sick)]
-                result.append(tmp)
-    else:
-        if len(cards) == 0 and empty2none:
-                result.append(cardid2idx["None"])
-        else:
-            [result.append(cardid2idx[card.id]) for card in cards]
-            if add_none:
-                result.append(cardid2idx["None"])
-
-    return result 
         
-
-class FeatureHolder(object):
-    def __init__(self, length, cardid2idx, phase2idx, first_play_idx):
-        self.cardid2idx = cardid2idx 
-        self.phase2idx = phase2idx
-
-        self.length = length 
-        self.features = {}
-        self.reset()
-
-    def _empty_feats(self, hand=False):
-        feats = {
-                "creatures": _card2idlist([], self.cardid2idx, True ),
-                "lands":[0, 0],
-                "n_hand":0,
-                "life":LIFE ,
-                "n_lib":DECK_NUM ,
-                "gy":_card2idlist([], self.cardid2idx, False),
-            }
-        if hand:
-            feats['hand'] = _card2idlist([], self.cardid2idx, False)
-        return feats
-
-    def _add_features(self, p_feat, o_feat, phase, playing_idx):
-        for k in o_feat:
-            self.features['player'][k].append(p_feat[k])
-            self.features['opponent'][k].append(o_feat[k])
-        self.features['player']['hand'].append(p_feat['hand'])
-        self.features['phase'].append(self.phase2idx(phase))
-        self.features['playing_idx'].append(playing_idx)
-
-    def reset(self):
-        self.features = {
-            "player":dict.fromkeys(["dense","creatures","tap_flg","sick_flg","gy","hand"], []),
-            "opponent":dict.fromkeys(["dense","creatures","tap_flg","sick_flg","gy"], []),
-            "phase":[],
-            "playing_idx":[]
-            }
-        for i in range(self.length):
-            p_default = self._empty_feats(True)
-            o_default = self._empty_feats()
-            self._add_features(p_default, o_default, 
-                UPKEEP, self.first_play_idx)
-            
-
-    def _player_feats(self, player, hand=True):
-        bf = player.battlefield
-        n_lands = len(bf.lands)
-        n_untap_lands = len(bf.get_untap_lands)
-        feats = {
-            "creatures": _card2idlist(bf.creatures, self.cardid2idx, True ),
-            "lands":[n_untap_lands, n_lands - n_untap_lands],
-            "n_hand":len(player.hand),
-            "life":player.life,
-            "n_lib":len(player.library),
-            "gy":_card2idlist(player.graveyard, self.cardid2idx, False)
-        }
-        if hand:
-            feats["hand"] = _card2idlist(player.hand, self.cardid2idx, False )
-
-        return feats
-
-    def push(self, game):
-        self._add_features(
-            self._player_feats(game.learner, hand=True),
-            self._player_feats(game.opponent, hand=False),
-            game.phase,
-            game.playing_idx)
-
-    def get_state(self):
-        res = {'player':{}, 'opponent':[]}
-        for k in self.features['opponent']:
-            res['player'][k] = self.features['player'][k][-self.length:]
-            res['opponent'][k] = self.features['opponent'][k][-self.length:]
-        res['player']['hand'] = self.features['player']['hand'][-self.length:]
-        res['phase'] = self.features['phase'][-self.length:]
-        res['playing_idx'] = self.features['playing_idx'][-self.length:]
-            
-        return res
 
 class Env(Game):
     def __init__(self, learner, opponent, cardid2idx, phase2idx, feat_length, 
@@ -149,12 +50,12 @@ class Env(Game):
 
     def _possible_actions(self, player):
         if self.phase in [MAIN1, MAIN2]:
-            return _card2idlist(player.castable_card(self)["hand"], 
+            return utils.card2idlist(player.castable_card(self)["hand"], 
                         self.cardid2idx, add_none=True, empty2none=False) 
 
         elif self.phase == ATTACK:
             attackable_creatures = player.battlefield.get_attackable_creatures()
-            ac_ids = _card2idlist(attackable_creatures, self.cardid2idx, add_none=False, empty2none=False)
+            ac_ids = utils.card2idlist(attackable_creatures, self.cardid2idx, add_none=False, empty2none=False)
             comb = []
             if len(ac_ids) > 0: 
                 for i in range(len(ac_ids)):
@@ -163,11 +64,11 @@ class Env(Game):
             return comb
 
         elif self.phase == BLOCK:
-            attackers = _card2idlist(self.battle_ctrl.get_attackers(), self.cardid2idx,
+            attackers = utils.card2idlist(self.battle_ctrl.get_attackers(), self.cardid2idx,
                                     add_none=False, empty2none=False)
             ac_num = len(attackers)
             blockable_creatures = player.battlefield.get_untap_creatures()
-            bc_ids = _card2idlist(blockable_creatures, self.cardid2idx, add_none=False, empty2none=False)
+            bc_ids = utils.card2idlist(blockable_creatures, self.cardid2idx, add_none=False, empty2none=False)
             
             if ac_num  > 0 and len(bc_ids) > 0:
                 block_targets = list(range(ac_num + 1)) # +1: not block

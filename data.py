@@ -7,6 +7,8 @@ import random
 
 from mtg.settings import *
 
+import utils
+
 
 Transition = namedtuple('Transition', 
     ('state', 'state_phase', 'action', 
@@ -29,6 +31,100 @@ Transition = namedtuple('Transition',
 #  possible_actions
 #
 
+
+# stock sequence of game-sanpshot{dict} as dict of list
+# self.features["featurename"] = sequence of "featurename" (list)
+# cardids are converted to idx by cardid2idx
+#
+# 1-phase in game -> FeatureHolder.push(...)
+class FeatureHolder(object):
+    def __init__(self, length, cardid2idx, phase2idx, first_play_idx):
+        self.cardid2idx = cardid2idx 
+        self.phase2idx = phase2idx
+
+        self.length = length 
+        self.features = {}
+        self.reset()
+
+    def _empty_feats(self, hand=False):
+        feats = {
+                "creatures": utils.card2idlist([], self.cardid2idx, True ),
+                "lands":[0, 0],
+                "n_hand":0,
+                "life":LIFE ,
+                "n_lib":DECK_NUM ,
+                "gy":utils.card2idlist([], self.cardid2idx, False),
+            }
+        if hand:
+            feats['hand'] = utils.card2idlist([], self.cardid2idx, False)
+        return feats
+
+    def _add_features(self, p_feat, o_feat, phase, playing_idx):
+        for k in o_feat:
+            self.features['player'][k].append(p_feat[k])
+            self.features['opponent'][k].append(o_feat[k])
+        self.features['player']['hand'].append(p_feat['hand'])
+        self.features['phase'].append(self.phase2idx(phase))
+        self.features['playing_idx'].append(playing_idx)
+
+    def reset(self):
+        self.features = {
+            "player":dict.fromkeys(["creatures","lands","n_hand","life", "n_lib", "gy","hand"], []),
+            "opponent":dict.fromkeys(["creatures","lands","n_hand","life", "n_lib", "gy"], []),
+            "phase":[],
+            "playing_idx":[]
+            }
+        for i in range(self.length):
+            p_default = self._empty_feats(True)
+            o_default = self._empty_feats()
+            self._add_features(p_default, o_default, 
+                UPKEEP, self.first_play_idx)
+            
+
+    def _player_feats(self, player, hand=True):
+        bf = player.battlefield
+        n_lands = len(bf.lands)
+        n_untap_lands = len(bf.get_untap_lands)
+        feats = {
+            "creatures": utils.card2idlist(bf.creatures, self.cardid2idx, True ),
+            "lands":[n_untap_lands, n_lands - n_untap_lands],
+            "n_hand":len(player.hand),
+            "life":player.life,
+            "n_lib":len(player.library),
+            "gy":utils.card2idlist(player.graveyard, self.cardid2idx, False)
+        }
+        if hand:
+            feats["hand"] = utils.card2idlist(player.hand, self.cardid2idx, False )
+
+        return feats
+
+    def push(self, game):
+        self._add_features(
+            self._player_feats(game.learner, hand=True),
+            self._player_feats(game.opponent, hand=False),
+            game.phase,
+            game.playing_idx)
+
+    def get_state(self):
+        res = {'player':{}, 'opponent':{}}
+        for k in self.features['opponent']:
+            res['player'][k] = self.features['player'][k][-self.length:]
+            res['opponent'][k] = self.features['opponent'][k][-self.length:]
+        res['player']['hand'] = self.features['player']['hand'][-self.length:]
+        res['phase'] = self.features['phase'][-self.length:]
+        res['playing_idx'] = self.features['playing_idx'][-self.length:]
+            
+        return res
+
+
+# stock trainsitions (state, state_phase, action, nextstate, next_phase, reward, possible_actions)
+# convert sequence of features to tensor
+# ## state ##
+# pad feature sequence in state and covert to tensor
+# ## action ##
+# pad and convert to tensor
+#
+# 1-action in game -> ReplayMemory.push(...)
 class ReplayMemory(object):
     def __init__(self, capacity, max_c = 20, max_h = 10, max_g = 60, pad_id = 0):
         '''
@@ -57,85 +153,26 @@ class ReplayMemory(object):
     def sample(self, batch_size):
         return random.sample(self.memory, batch_size)
 
-    def _pad(self, cards, max_len):
-        # to utils ?
-        return cards + [self.pad_id] * (max_len - len(cards))
-
-    def _pad_bf_creatures(self, creatures_data, max_len):
-        # to utils ?
-        l = len(creatures_data)
-        creatures = [c[0] for c in creatures_data]
-        tap_flg = [c[1] for c in creatures_data]
-        sick_flg = [c[1] for c in creatures_data]
-        pad_c = self._pad(creatures, max_len)
-        pad_tap_flg = tap_flg + [0]*(max_len - l)
-        pad_sick_flg = sick_flg + [0]*(max_len - l)
-
-        return pad_c, pad_tap_flg, pad_sick_flg
-
     def _fix_action(self, action, phase):
         if phase in [MAIN1, MAIN2]:
             return torch.LongTensor([action])
         elif phase == ATTACK:
-            return torch.LongTensor(self._pad(action, self.max_c))
+            return torch.LongTensor(utils.pad(action, self.max_c))
         else: # block
-            attackers = torch.LongTensor(self._pad(action["attackers"], self.max_c))
+            attackers = torch.LongTensor(utils.pad(action["attackers"], self.max_c))
             blockers = torch.LongTensor(
-                list(map(lambda x:self._pad(x, self.max_c), action["blockers"]))
+                list(map(lambda x:utils.pad(x, self.max_c), action["blockers"]))
             )
             return (attackers, blockers)
-
-    def _fix_player_feat(self, feat):
-        # TODO to utils?
-        res = {}
-        res["dense"] = [
-                feat['lands'][0], feat['lands'][1],
-                feat['n_hand'], feat['life'], feat['n_lib']
-                ] 
-        p_c, p_tf, p_sf = self._pad_bf_creatures(feat['creatures'], self.max_c) 
-        res["creatures"] = p_c
-        res["tap_flg"] = p_tf
-        res["sick_flg"] = p_sf
-        res["gy"] = self._pad(feat['gy'], self.max_g)
-        if "hand" in feat:
-            res["hand"] = self._pad(feat['hand'], self.max_h)
-
-        return res
-
-    def _player_state2tensor(self, dict_of_list):
-        res = {}
-        res["dense"] = torch.Tensor(res["player"]["dence"])
-        res["creatures"] = torch.Tensor(res["player"][""])
-        ###############
-
-    def _fix_state(self, state):
-        # TODO to utils?
-        res = {
-            "player":{"dense":[],"creatures":[],"tap_flg":[],"sick_flg":[],"gy":[],"hand":[]},
-            "opponent":{"dense":[],"creatures":[],"tap_flg":[],"sick_flg":[],"gy":[]},
-            "phase":[],
-            "playing_idx":[]
-            }
-        for feat in state:
-            p_feat = self._fix_player_feat(feat["player"])
-            for k, v in p_feat.items():
-                res["player"][k].append(v)
-            o_feat = self._fix_player_feat(feat["opponent"])
-            for k, v in o_feat.items():
-                res["opponent"][k].append(v)
-            res["phase"].append(feat["phase"])
-            res["playing_idx"].append(feat["playing_idx"])
-
-        return res
             
     def _fix_trainsition(self, state, state_phase, action, nextstate, 
                         nextstate_phase, reward, possible_actions):
         if state is not None:
-            state = self._fix_state(state)
+            state = utils.fix_state(state)
         if action is not None:
             action = self._fix_action(action, phase=state_phase)
         if nextstate is not None:
-            nextstate = self._fix_state(nextstate)
+            nextstate = utils.fix_state(nextstate)
         if possible_actions is not None:
             possible_actions = list(map(lambda x: self._fix_action(x, nextstate_phase), possible_actions))
 

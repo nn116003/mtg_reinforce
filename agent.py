@@ -24,7 +24,7 @@ class Agent(Player):
         self.attack_module.eval()
         self.block_module.eval()
 
-    def _select_cast_action(self, state, card_ids):
+    def _select_cast_action(self, state_tensor, card_ids):
         pass
 
     def cast_action(self, state, card_ids):
