@@ -8,7 +8,7 @@ import numpy as np
 import copy
 
 
-class TestGane(unittest.TestCase):
+class TestGame(unittest.TestCase):
     def setUp(self):
         np.random.seed(2)
         self.deck1 = utils.random_deck_from_list(32, './mtg/cards.csv')

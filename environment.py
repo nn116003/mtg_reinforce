@@ -48,7 +48,8 @@ class Env(Game):
             self.opponent.reset()
         self.feature_holder.reset()
 
-    def _possible_actions(self, player):
+    def possible_actions(self, player):
+        # TODO tmp id?
         if self.phase in [MAIN1, MAIN2]:
             return utils.card2idlist(player.castable_card(self)["hand"], 
                         self.cardid2idx, add_none=True, empty2none=False) 
@@ -165,7 +166,7 @@ class Env(Game):
                 # main
                 self.set_phase(MAIN1)
                 while True:
-                    possible_actions = self._possible_actions(self.learner)
+                    possible_actions = self.possible_actions(self.learner)
                     if len(possible_actions) > 0:
                         nextstate, reward = self._prevNS_prevR()
                         if state is not None:
@@ -182,7 +183,7 @@ class Env(Game):
                         
                 # attack
                 self.set_phase(ATTACK)
-                possible_actions = self._possible_actions(self.learner)
+                possible_actions = self.possible_actions(self.learner)
                 if len(possible_actions) > 0:
                     nextstate, reward = self._prevNS_prevR()
                     yield state, state_phase, action, nextstate, ATTACK, reward, possible_actions
@@ -213,7 +214,7 @@ class Env(Game):
                 # MAIN2
                 self.set_phase(MAIN2)
                 while True:
-                    possible_actions = self._possible_actions(self.learner)
+                    possible_actions = self.possible_actions(self.learner)
                     if len(possible_actions) > 0:
                         nextstate, reward = self._prevNS_prevR()
                         if state is not None:
@@ -249,7 +250,7 @@ class Env(Game):
 
                 # block
                 self.set_phase(BLOCK)
-                possible_actions = self._possible_actions(self.learner)
+                possible_actions = self.possible_actions(self.learner)
                 if len(possible_actions) > 0:
                     nextstate, reward = self._prevNS_prevR()
                     yield state, state_phase, action, nextstate, BLOCK, reward, possible_actions
