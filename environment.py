@@ -49,7 +49,8 @@ class Env(Game):
         self.feature_holder.reset()
 
     def possible_actions(self, player):
-        # TODO tmp id?
+        # Potentialy, card should be treated with tmp_id
+        # so following porcedure should be changed in the future
         if self.phase in [MAIN1, MAIN2]:
             return utils.card2idlist(player.castable_card(self)["hand"], 
                         self.cardid2idx, add_none=True, empty2none=False) 
