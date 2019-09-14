@@ -4,6 +4,7 @@ import torch
 import torch.nn.functional as F
 
 import random
+from collections import namedtuple
 
 from mtg.settings import *
 
@@ -44,7 +45,7 @@ class FeatureHolder(object):
 
         self.length = length 
         self.features = {}
-        self.reset()
+        self.reset(first_play_idx)
 
     def _empty_feats(self, hand=False):
         feats = {
@@ -67,7 +68,7 @@ class FeatureHolder(object):
         self.features['phase'].append(self.phase2idx(phase))
         self.features['playing_idx'].append(playing_idx)
 
-    def reset(self):
+    def reset(self, first_play_idx):
         self.features = {
             "player":dict.fromkeys(["creatures","lands","n_hand","life", "n_lib", "gy","hand"], []),
             "opponent":dict.fromkeys(["creatures","lands","n_hand","life", "n_lib", "gy"], []),
@@ -78,7 +79,7 @@ class FeatureHolder(object):
             p_default = self._empty_feats(True)
             o_default = self._empty_feats()
             self._add_features(p_default, o_default, 
-                UPKEEP, self.first_play_idx)
+                UPKEEP, first_play_idx)
             
 
     def _player_feats(self, player, hand=True):
@@ -157,22 +158,24 @@ class ReplayMemory(object):
         if phase in [MAIN1, MAIN2]:
             return torch.LongTensor([action])
         elif phase == ATTACK:
-            return torch.LongTensor(utils.pad(action, self.max_c))
+            return torch.LongTensor(utils.pad(action, self.pad_id, self.max_c))
         else: # block
-            attackers = torch.LongTensor(utils.pad(action["attackers"], self.max_c))
+            attackers = torch.LongTensor(
+                utils.pad(action["attackers"], self.pad_id, self.max_c)
+                )
             blockers = torch.LongTensor(
-                list(map(lambda x:utils.pad(x, self.max_c), action["blockers"]))
+                list(map(lambda x:utils.pad(x, self.pad_id, self.max_c), action["blockers"]))
             )
             return (attackers, blockers)
             
     def _fix_trainsition(self, state, state_phase, action, nextstate, 
                         nextstate_phase, reward, possible_actions):
         if state is not None:
-            state = utils.fix_state(state)
+            state = utils.fix_state(state, self.pad_id, self.max_c, self.max_g, self.max_h)
         if action is not None:
             action = self._fix_action(action, phase=state_phase)
         if nextstate is not None:
-            nextstate = utils.fix_state(nextstate)
+            nextstate = utils.fix_state(nextstate, self.pad_id, self.max_c, self.max_g, self.max_h)
         if possible_actions is not None:
             possible_actions = list(map(lambda x: self._fix_action(x, nextstate_phase), possible_actions))
 

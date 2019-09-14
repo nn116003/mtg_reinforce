@@ -5,6 +5,8 @@ import utils
 import logging
 import numpy as np
 import itertools
+
+from data import FeatureHolder
         
 
 class Env(Game):

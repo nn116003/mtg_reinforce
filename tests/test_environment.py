@@ -19,7 +19,7 @@ class TestEnvironment(unittest.TestCase):
         self.p1 = player.Stupid_Player(1, self.deck1)
         self.p2 =  player.Stupid_Player(2, self.deck2)
         self.cardid2idx = {"None":0,1:1,2:2,3:3,4:4,99:5}
-        self.phase2idx = {UPLEEP:0, DRAW:1, MAIN1:2, MAIN2:2, ATTACK:3, BLOCK:4, ASSIGN:5 DAMAGE:6}
+        self.phase2idx = {UPKEEP:0, DRAW:1, MAIN1:2, MAIN2:2, ATTACK:3, BLOCK:4, ASSIGN:5, DAMAGE:6}
         self.env = Env(self.p1, self.p2, self.cardid2idx, self.phase2idx, feat_length=2)
 
     def test_possible_actions_cast(self):
@@ -58,12 +58,12 @@ class TestEnvironment(unittest.TestCase):
         creatures[0].untap()
         creatures[1].summon_sick = False
         creatures[1].tap()
-        self.b1.battlefield.creatures = creatures
+        self.p1.battlefield.creatures = creatures
         pas = self.env.possible_actions(self.p1)
         self.assertEqual(len(pas), 0)
 
         # there are attackable creatures
-        creatures.extend([Creatures(3,3,3,3,3), Creatures(4,4,4,4,4)])
+        creatures.extend([Creature(3,3,3,3,3), Creature(4,4,4,4,4)])
         creatures[2].summon_dick = False
         creatures[3].summon_dick = False
         pas = self.env.possible_actions(self.p1)
@@ -95,27 +95,22 @@ class TestEnvironment(unittest.TestCase):
         self.assertEqual(len(pas), 0)
 
         # threre are blockable creatures
-        self.creatures[0].untap()
-        self.creatures[1].untap()
+        selfcreatures[0].untap()
+        selfcreatures[1].untap()
         ans = [
-            [["None"], ["None"]],
-            [["None"], [1]],
-            [["None"], [2]],
-            [["None"], [1, 2]],
-            [[1], ["None"]],
-            [[2], ["None"]],
-            [[1,2], ["None"]],
-            [[1], [2]],
-            [[2], [1]]
+            [[self.cardid2idx["None"]], [self.cardid2idx["None"]]],
+            [[self.cardid2idx["None"]], [self.cardid2idx[1]]],
+            [[self.cardid2idx["None"]], [self.cardid2idx[2]]],
+            [[self.cardid2idx["None"]], [self.cardid2idx[1], self.cardid2idx[2]]],
+            [[self.cardid2idx[1]], [self.cardid2idx["None"]]],
+            [[self.cardid2idx[2]], [self.cardid2idx["None"]]],
+            [[self.cardid2idx[1],self.cardid2idx[2]], [self.cardid2idx["None"]]],
+            [[self.cardid2idx[1]], [self.cardid2idx[2]]],
+            [[self.cardid2idx[2]], [self.cardid2idx[1]]]
         ]
-        # TODO apply
-        for bl in ans:
-            for bcs in bl:
-                pass
-
-        
+        # TODO?
+        self.assertEqual(ans, pas)
 
 
-
-
-
+if __name__ == "__main__":
+    unittest.main()
