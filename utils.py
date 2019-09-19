@@ -13,7 +13,8 @@ def card2idlist(cards, cardid2idx,
                 tmp = [cardid2idx[card.id], 1-int(card.is_tapped()), int(card.summon_sick)]
                 result.append(tmp)
     else:
-        if len(cards) == 0 and empty2none:
+        if len(cards) == 0: 
+            if empty2none:
                 result.append(cardid2idx["None"])
         else:
             [result.append(cardid2idx[card.id]) for card in cards]

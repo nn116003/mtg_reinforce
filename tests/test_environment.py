@@ -64,8 +64,8 @@ class TestEnvironment(unittest.TestCase):
 
         # there are attackable creatures
         creatures.extend([Creature(3,3,3,3,3), Creature(4,4,4,4,4)])
-        creatures[2].summon_dick = False
-        creatures[3].summon_dick = False
+        creatures[2].summon_sick = False
+        creatures[3].summon_sick = False
         pas = self.env.possible_actions(self.p1)
         pas = list(map(lambda x:set(x), pas))
         ans = [
@@ -108,8 +108,11 @@ class TestEnvironment(unittest.TestCase):
             [[self.cardid2idx[1]], [self.cardid2idx[2]]],
             [[self.cardid2idx[2]], [self.cardid2idx[1]]]
         ]
-        # TODO?
-        self.assertEqual(ans, pas)
+        pas = self.env.possible_actions(self.p1)
+        print(pas)
+        print("##########")
+        print(ans)
+        self.assertCountEqual(ans, pas)
 
 
 if __name__ == "__main__":

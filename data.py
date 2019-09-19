@@ -62,16 +62,23 @@ class FeatureHolder(object):
 
     def _add_features(self, p_feat, o_feat, phase, playing_idx):
         for k in o_feat:
-            self.features['player'][k].append(p_feat[k])
-            self.features['opponent'][k].append(o_feat[k])
-        self.features['player']['hand'].append(p_feat['hand'])
-        self.features['phase'].append(self.phase2idx(phase))
+            if self.features['player'][k] is not None:
+                self.features['player'][k].append(p_feat[k])
+                self.features['opponent'][k].append(o_feat[k])
+            else:
+                self.features['player'][k] = []
+                self.features['opponent'][k] = []
+        if self.features['player']['hand'] is not None:
+            self.features['player']['hand'].append(p_feat['hand'])
+        else:
+            self.features['player']['hand'] = []
+        self.features['phase'].append(self.phase2idx[phase])
         self.features['playing_idx'].append(playing_idx)
 
     def reset(self, first_play_idx):
         self.features = {
-            "player":dict.fromkeys(["creatures","lands","n_hand","life", "n_lib", "gy","hand"], []),
-            "opponent":dict.fromkeys(["creatures","lands","n_hand","life", "n_lib", "gy"], []),
+            "player":dict.fromkeys(["creatures","lands","n_hand","life", "n_lib", "gy","hand"]),
+            "opponent":dict.fromkeys(["creatures","lands","n_hand","life", "n_lib", "gy"]),
             "phase":[],
             "playing_idx":[]
             }
@@ -80,12 +87,12 @@ class FeatureHolder(object):
             o_default = self._empty_feats()
             self._add_features(p_default, o_default, 
                 UPKEEP, first_play_idx)
-            
+        
 
     def _player_feats(self, player, hand=True):
         bf = player.battlefield
         n_lands = len(bf.lands)
-        n_untap_lands = len(bf.get_untap_lands)
+        n_untap_lands = len(bf.get_untap_lands())
         feats = {
             "creatures": utils.card2idlist(bf.creatures, self.cardid2idx, True ),
             "lands":[n_untap_lands, n_lands - n_untap_lands],

@@ -87,7 +87,7 @@ class Env(Game):
                             block_list[b_target].append(bc_id)
                     for b in block_list:
                         if len(b) == 0:
-                            b.append(self.cardid2idx("None"))
+                            b.append(self.cardid2idx["None"])
                     res.append(block_list)
                 return res
             else:
