@@ -36,23 +36,23 @@ class TestData(unittest.TestCase):
 
         self.env.phase = MAIN1
         self.env.playing_idx = 0
-        self.env.feature_holder.push(self.env)
 
         ans = {
             "player":{
                 "creatures":[
                     [[self.cardid2idx["None"], 0, 0]],
                     [[self.cardid2idx["None"], 0, 0]],
-                    [[self.cardid2idx[2],1,0], [self.cardid2idx[3],0,1]]
+                    [[self.cardid2idx[2],0,1], [self.cardid2idx[3],1,0]]
                 ],
                 "lands":[[0,0], [0,0], [1,1]],
                 "n_hand":[0,0,2],
                 "life":[LIFE, LIFE, LIFE],
                 "n_lib":[DECK_NUM, DECK_NUM, DECK_NUM],
-                "gy":[self.cardid2idx["None"], self.cardid2idx["None"], self.cardid2idx["None"]],
+                "gy":[[self.cardid2idx["None"]], 
+                    [self.cardid2idx["None"]], [self.cardid2idx["None"]]],
                 "hand":[
                     [self.cardid2idx["None"]], [self.cardid2idx["None"]], 
-                    [self.cardid2idx[2], self.cardid2idx[3]]
+                    [self.cardid2idx[1], self.cardid2idx[99]]
                     ]
             },
             "opponent":{
@@ -73,9 +73,10 @@ class TestData(unittest.TestCase):
             "phase":[self.phase2idx[UPKEEP], self.phase2idx[UPKEEP], self.phase2idx[MAIN1]],
             "playing_idx":[0, 0, 0]
         }
-        #print(ans)
-        #print("###########")
-        #print(self.env.feature_holder.features)
+        self.env.feature_holder.push(self.env)
+        print(ans)
+        print("###########")
+        print(self.env.feature_holder.features)
         self.assertEqual(ans, self.env.feature_holder.features)
 
         state = self.env.feature_holder.get_state()
@@ -83,16 +84,16 @@ class TestData(unittest.TestCase):
             "player":{
                 "creatures":[
                     [[self.cardid2idx["None"], 0, 0]],
-                    [[self.cardid2idx[2],1,0], [self.cardid2idx[3],0,1]]
+                    [[self.cardid2idx[2],0,1], [self.cardid2idx[3],1,0]]
                 ],
                 "lands":[[0,0], [1,1]],
                 "n_hand":[0,2],
                 "life":[LIFE, LIFE],
                 "n_lib":[DECK_NUM, DECK_NUM],
-                "gy":[self.cardid2idx["None"], self.cardid2idx["None"]],
+                "gy":[[self.cardid2idx["None"]], [self.cardid2idx["None"]]],
                 "hand":[
                     [self.cardid2idx["None"]], 
-                    [self.cardid2idx[2], self.cardid2idx[3]]
+                    [self.cardid2idx[1], self.cardid2idx[99]]
                     ]
             },
             "opponent":{

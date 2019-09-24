@@ -24,7 +24,8 @@ class Env(Game):
             self.playing_idx = 1
 
         # to save past n turn features
-        self.feature_holder = FeatureHolder(feat_length, cardid2idx, phase2idx, self.playing_idx)
+        self.feature_holder = FeatureHolder(feat_length, cardid2idx, 
+                                phase2idx, self.playing_idx)
 
         # sanpshot  of game(not = feat, use to calc reward)
         self.prev_snapshot = {
@@ -48,7 +49,7 @@ class Env(Game):
             self.opponent = opponent
         else:
             self.opponent.reset()
-        self.feature_holder.reset()
+        self.feature_holder.reset(self.playing_idx)
 
     def possible_actions(self, player):
         # Potentialy, card should be treated with tmp_id

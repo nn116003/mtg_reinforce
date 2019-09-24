@@ -66,12 +66,12 @@ class FeatureHolder(object):
                 self.features['player'][k].append(p_feat[k])
                 self.features['opponent'][k].append(o_feat[k])
             else:
-                self.features['player'][k] = []
-                self.features['opponent'][k] = []
+                self.features['player'][k] = [p_feat[k]]
+                self.features['opponent'][k] = [o_feat[k]]
         if self.features['player']['hand'] is not None:
             self.features['player']['hand'].append(p_feat['hand'])
         else:
-            self.features['player']['hand'] = []
+            self.features['player']['hand'] = [p_feat['hand']]
         self.features['phase'].append(self.phase2idx[phase])
         self.features['playing_idx'].append(playing_idx)
 
