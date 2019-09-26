@@ -45,7 +45,7 @@ def _pad_bf_creatures(
 def _fix_player_feat(feat, pad_id, max_c, max_g, max_h):
     res = {}
 
-    # phase_len, 5
+    # 1, phase_len, 5
     res["dense"] = torch.cat(
         [
             torch.Tensor(feat['lands']), # phase_len, 2
@@ -54,19 +54,19 @@ def _fix_player_feat(feat, pad_id, max_c, max_g, max_h):
             torch.Tensor(feat['n_lib']).view(-1,1),
         ],
         dim = 1
-    )
+    ).unsqueeze(0)
 
-    # (phase_len, max_len ) *3
+    # (1, phase_len, max_len ) *3
     p_c, p_tf, p_sf = _pad_bf_creatures(feat['creatures'], pad_id, max_c) 
-    res["creatures"] = p_c
-    res["tap_flg"] = p_tf
-    res["sick_flg"] = p_sf
+    res["creatures"] = p_c.unsqueeze(0)
+    res["tap_flg"] = p_tf.unsqueeze(0)
+    res["sick_flg"] = p_sf.unsqueeze(0)
 
-    # phase_len, max_g
-    res["gy"] = torch.LongTensor(pad(feat['gy'], pad_id, max_g))
+    # 1, phase_len, max_g
+    res["gy"] = torch.LongTensor(pad(feat['gy'], pad_id, max_g)).unsqueeze(0)
     if "hand" in feat:
-        #phase_len, max_h
-        res["hand"] = torch.LongTensor(pad(feat['hand'], pad_id, max_h))
+        # 1, phase_len, max_h
+        res["hand"] = torch.LongTensor(pad(feat['hand'], pad_id, max_h)).unsqueeze(0)
 
     return res
 
@@ -74,7 +74,8 @@ def fix_state(state, pad_id, max_c, max_g, max_h):
     res = {}
     res["player"] = _fix_player_feat(state["player"], pad_id, max_c, max_g, max_h)
     res["opponent"] = _fix_player_feat(state["player"], pad_id, max_c, max_g, max_h)
-    res["phase"] = torch.LongTensor(state["phase"])
-    res["playing_idx"] = torch.Tensor(state["playing_idx"])
+    res["phase"] = torch.LongTensor(state["phase"]).unsqueeze(0)
+    res["playing_idx"] = torch.Tensor(state["playing_idx"]).unsqueeze(0)
 
     return res
+
