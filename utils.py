@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-def card2idlist(cards, cardid2idx, 
+def card2idxlist(cards, cardid2idx, 
                 battlefield=False, add_none=False, empty2none=True):
     result = []
     if battlefield:
@@ -79,3 +79,36 @@ def fix_state(state, pad_id, max_c, max_g, max_h):
 
     return res
 
+def cast_action2tensor(cardid):
+    return torch.LongTensor([action])
+
+def attack_action2tensor(action, pad_id, max_c):
+    return torch.LongTensor(pad(action, pad_id, max_c))
+
+def block_action2tensor(action, pad_id, max_c):
+    attackers = torch.LongTensor(
+        utils.pad(action["attackers"], pad_id, max_c) # max_c
+        )
+    blockers = torch.LongTensor(
+        list(map(lambda x:pad(x, pad_id, max_c), action["blockers"])) # max_c, max_c
+        )
+    return (attackers, blockers)
+
+
+# potentialy, we dont have to use this fcn.
+# we shuold use tmp_id instaed of id
+def cardids2cards(cardids, card_list):
+    id_order_dict = {}
+    for i, card in enumerate(card_list):
+        if card.id in id_order_dict:
+            id_order_dict[card.id].append(i)
+        else:
+            id_order_dict[card.id] = []
+
+    res = []
+    for cardid in cardids:
+        res.append( card_list[id_order_dict[cardid][0]] )
+        del id_order_dict[cardid][0]
+
+    return res
+        

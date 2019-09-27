@@ -49,15 +49,15 @@ class FeatureHolder(object):
 
     def _empty_feats(self, hand=False):
         feats = {
-                "creatures": utils.card2idlist([], self.cardid2idx, True ),
+                "creatures": utils.card2idxlist([], self.cardid2idx, True ),
                 "lands":[0, 0],
                 "n_hand":0,
                 "life":LIFE ,
                 "n_lib":DECK_NUM ,
-                "gy":utils.card2idlist([], self.cardid2idx, False),
+                "gy":utils.card2idxlist([], self.cardid2idx, False),
             }
         if hand:
-            feats['hand'] = utils.card2idlist([], self.cardid2idx, False)
+            feats['hand'] = utils.card2idxlist([], self.cardid2idx, False)
         return feats
 
     def _add_features(self, p_feat, o_feat, phase, playing_idx):
@@ -94,15 +94,15 @@ class FeatureHolder(object):
         n_lands = len(bf.lands)
         n_untap_lands = len(bf.get_untap_lands())
         feats = {
-            "creatures": utils.card2idlist(bf.creatures, self.cardid2idx, True ),
+            "creatures": utils.card2idxlist(bf.creatures, self.cardid2idx, True ),
             "lands":[n_untap_lands, n_lands - n_untap_lands],
             "n_hand":len(player.hand),
             "life":player.life,
             "n_lib":len(player.library),
-            "gy":utils.card2idlist(player.graveyard, self.cardid2idx, False)
+            "gy":utils.card2idxlist(player.graveyard, self.cardid2idx, False)
         }
         if hand:
-            feats["hand"] = utils.card2idlist(player.hand, self.cardid2idx, False )
+            feats["hand"] = utils.card2idxlist(player.hand, self.cardid2idx, False )
 
         return feats
 
@@ -162,25 +162,20 @@ class ReplayMemory(object):
         return random.sample(self.memory, batch_size)
 
     def _fix_action(self, action, phase):
-        if phase in [MAIN1, MAIN2]:
-            return torch.LongTensor([action])
-        elif phase == ATTACK:
-            return torch.LongTensor(utils.pad(action, self.pad_id, self.max_c))
-        else: # block
-            attackers = torch.LongTensor(
-                utils.pad(action["attackers"], self.pad_id, self.max_c)
-                )
-            blockers = torch.LongTensor(
-                list(map(lambda x:utils.pad(x, self.pad_id, self.max_c), action["blockers"]))
-            )
-            return (attackers, blockers)
+        if state_phase in [MAIN1, MAIN2]:
+            action = utils.cast_action2tensor(action)
+        elif state_phase == ATTACK:
+            action = utils.attack_action2tensor(action, self.pad_id, self.max_c)
+        else:#block
+            action = utils.block_action2tensor(action, self.pad_id, sekf.max_c)
+        return action
             
     def _fix_trainsition(self, state, state_phase, action, nextstate, 
                         nextstate_phase, reward, possible_actions):
         if state is not None:
             state = utils.fix_state(state, self.pad_id, self.max_c, self.max_g, self.max_h)
         if action is not None:
-            action = self._fix_action(action, phase=state_phase)
+            action = self._fix_action(action, state_phase)
         if nextstate is not None:
             nextstate = utils.fix_state(nextstate, self.pad_id, self.max_c, self.max_g, self.max_h)
         if possible_actions is not None:

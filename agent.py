@@ -47,26 +47,61 @@ class Agent(Player):
         self.attack_module.eval()
         self.block_module.eval()
 
-    def _select_cast_action(self, 
+    def select_cast_action(self, 
         state_tensor, # dict of tensor (batch_size = 1)
-        card_ids # list of tensor
+        card_indexes # list of tensor : possible actions
         ):
         expanded_state_tensor = _expand_state_tensor(state_tensor, len(card_ids))
-        Qs = self.cast_module(expanded_state_tensor, torch.cat(card_ids).view(-1,1)) # 1, len(card_ids)
-        # TODO max
-        max_q, max_idx = Qs.view(-1).max()
-        # predict from tensor
-        # return state, action, Q
-        return card_ids[int(max_idx)], max_q
+        Qs = self.cast_module(expanded_state_tensor, torch.cat(card_indexes).view(-1,1)) # 1, len(card_ids)
+        max_q, max_idx = Qs.view(-1).max(0)
+        return card_indexes[int(max_idx)], max_q
 
-    def cast_action(self, env, state, card_ids):
-        # to tensor
-        state_tensor_dict = utils.fix_state(state, self.pad_id, self.max_c, self.max_g, self.max_h)
-        # action_tensor = utils.fix_action(card_ids, )
+    def cast_action(self, env, state, card_indexes):
         # select action
-        # do action
-        # return state, action
-        pass
+        state_tensor_dict = utils.fix_state(state, self.pad_id, self.max_c, self.max_g, self.max_h)
+        action_tensors = list(map(lambda x: utils.cast_action2tensor(x), card_indexes))
+        card_idx, _ = self.select_cast_action(state_tensor_dict, action_tensors)
+
+        # idx -> id -> card -> cast
+        card_id = env.idx2cardid[int(card_idx)]
+        castable_cards = self.castable_card(env)["hand"]
+        cast_card = utils.cardids2cards([card_id], castable_cards)
+        self._cast_from_hand(cast_card, env)
+
+        return state, card_idx
+
+    def select_attack_action(
+        self,
+        state_tensor, # dict of tensor (batch_size = 1)
+        attackers_tensor_list # list of tensor (max_c): possible actions
+    ):
+        expanded_state_tensor = _expand_state_tensor(state_tensor, len(attackers_tensor_list))
+        Qs = self.attack_module(expanded_state_tensor, torch.cat(attackers_tensor_list)) # len(card_ids), 1
+        max_q, max_idx = Qs.view(-1).max(0)
+        return attackers_tensor_list[int(max_idx)], max_q
+
+    def attack_action(self, env, state, attackers_list):
+        # select action
+        state_tensor_dict = utils.fix_state(state, self.pad_id, self.max_c, self.max_g, self.max_h)
+        action_tensors = list(map(lambda x: utils.attack_action2tensor(x), attackers_list))
+        attackers_tensor, _ = self.select_attack_action(state_tensor_dict, action_tensors)
+
+        # idx -> id -> card -> attack
+        attacker_ids = []
+        for card_idx in attackers_tensor.view(-1):
+            card_id = env.idx2cardid[int(card_idx)]
+            if card_id == self.pad_id:
+                break
+            else:
+                attacker_ids.append(card_id)
+        attackable_cards = self.battlefield.get_attackable_creatures()
+
+        attack_card = utils.cardids2cards(attacker_ids, attackable_cards)
+        self._attack(attack_card, env.battle_ctrl)
+
+        return state, attackers_ids
+
+# TODO check id/index of action
 
 class DummyAgent(Player):
     pass

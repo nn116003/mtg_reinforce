@@ -19,7 +19,12 @@ class Env(Game):
         self.win_reward = win_reward
         self.lose_reward = lose_reward
         self.cardid2idx = cardid2idx
+        self.phase2idx = phase2idx
         
+        tmp = sorted(list(cardid2idx.items()), ley=lambda x: x[1])
+
+        self.idx2cardid = [t[0] for tmp in t]
+
         if not first:
             self.playing_idx = 1
 
@@ -55,12 +60,12 @@ class Env(Game):
         # Potentialy, card should be treated with tmp_id
         # so following porcedure should be changed in the future
         if self.phase in [MAIN1, MAIN2]:
-            return utils.card2idlist(player.castable_card(self)["hand"], 
+            return utils.card2idxlist(player.castable_card(self)["hand"], 
                         self.cardid2idx, add_none=True, empty2none=False) 
 
         elif self.phase == ATTACK:
             attackable_creatures = player.battlefield.get_attackable_creatures()
-            ac_ids = utils.card2idlist(attackable_creatures, self.cardid2idx, add_none=False, empty2none=False)
+            ac_ids = utils.card2idxlist(attackable_creatures, self.cardid2idx, add_none=False, empty2none=False)
             comb = []
             if len(ac_ids) > 0: 
                 for i in range(len(ac_ids)):
@@ -69,11 +74,11 @@ class Env(Game):
             return comb
 
         elif self.phase == BLOCK:
-            attackers = utils.card2idlist(self.battle_ctrl.get_attackers(), self.cardid2idx,
+            attackers = utils.card2idxlist(self.battle_ctrl.get_attackers(), self.cardid2idx,
                                     add_none=False, empty2none=False)
             ac_num = len(attackers)
             blockable_creatures = player.battlefield.get_untap_creatures()
-            bc_ids = utils.card2idlist(blockable_creatures, self.cardid2idx, add_none=False, empty2none=False)
+            bc_ids = utils.card2idxlist(blockable_creatures, self.cardid2idx, add_none=False, empty2none=False)
             
             if ac_num  > 0 and len(bc_ids) > 0:
                 block_targets = list(range(ac_num + 1)) # +1: not block
