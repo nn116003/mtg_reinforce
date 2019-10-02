@@ -23,7 +23,7 @@ class Env(Game):
         
         tmp = sorted(list(cardid2idx.items()), ley=lambda x: x[1])
 
-        self.idx2cardid = [t[0] for tmp in t]
+        self.idx2cardid = [t[0] for t in tmp]
 
         if not first:
             self.playing_idx = 1

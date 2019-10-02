@@ -51,7 +51,7 @@ class Agent(Player):
         state_tensor, # dict of tensor (batch_size = 1)
         card_indexes # list of tensor : possible actions
         ):
-        expanded_state_tensor = _expand_state_tensor(state_tensor, len(card_ids))
+        expanded_state_tensor = _expand_state_tensor(state_tensor, len(card_indexes))
         Qs = self.cast_module(expanded_state_tensor, torch.cat(card_indexes).view(-1,1)) # 1, len(card_ids)
         max_q, max_idx = Qs.view(-1).max(0)
         return card_indexes[int(max_idx)], max_q
@@ -99,7 +99,7 @@ class Agent(Player):
         attack_card = utils.cardids2cards(attacker_ids, attackable_cards)
         self._attack(attack_card, env.battle_ctrl)
 
-        return state, attackers_ids
+        return state, attack_card
 
 # TODO check id/index of action
 

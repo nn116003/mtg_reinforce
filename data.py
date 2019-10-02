@@ -10,6 +10,15 @@ from mtg.settings import *
 
 import utils
 
+# action
+# module in/out = tensor idx
+# agent cast_action in/out = index (-> ***** not id ? ->pad -> tensor -> index -> id(action) -> index)
+# replay_memory push in = index
+# replya_memory samle = tensor 
+
+
+
+
 
 Transition = namedtuple('Transition', 
     ('state', 'state_phase', 'action', 
@@ -162,12 +171,12 @@ class ReplayMemory(object):
         return random.sample(self.memory, batch_size)
 
     def _fix_action(self, action, phase):
-        if state_phase in [MAIN1, MAIN2]:
+        if phase in [MAIN1, MAIN2]:
             action = utils.cast_action2tensor(action)
-        elif state_phase == ATTACK:
+        elif phase == ATTACK:
             action = utils.attack_action2tensor(action, self.pad_id, self.max_c)
         else:#block
-            action = utils.block_action2tensor(action, self.pad_id, sekf.max_c)
+            action = utils.block_action2tensor(action, self.pad_id, self.max_c)
         return action
             
     def _fix_trainsition(self, state, state_phase, action, nextstate, 

@@ -80,7 +80,7 @@ def fix_state(state, pad_id, max_c, max_g, max_h):
     return res
 
 def cast_action2tensor(cardid):
-    return torch.LongTensor([action])
+    return torch.LongTensor([cardid])
 
 def attack_action2tensor(action, pad_id, max_c):
     return torch.LongTensor(pad(action, pad_id, max_c))
