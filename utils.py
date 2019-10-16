@@ -23,26 +23,26 @@ def card2idxlist(cards, cardid2idx,
 
     return result 
 
-def pad(indexes, pad_id, max_len):
-    return indexes + [pad_id] * (max_len - len(indexes))
+def pad(indexes, pad_idx, max_len):
+    return indexes + [pad_idx] * (max_len - len(indexes))
 
 def _pad_bf_creatures(
         creatures_data, # phase_len, *, 3
-        pad_id, 
+        pad_idx, 
         max_len):
     pad_c = []
     pad_tap_flg = []
     pad_sick_flg = []
     for ss in creatures_data:
         ss_arr = np.array(ss).astype(int) # *, 3
-        pad_c.append(pad(ss_arr[:,0], pad_id, max_len))
+        pad_c.append(pad(ss_arr[:,0], pad_idx, max_len))
         pad_tap_flg.append(pad(ss_arr[:,1], 0, max_len))
         pad_sick_flg.append(pad(ss_arr[:,2], 0, max_len))
 
     # (phase_len, max_len ) *3
     return torch.LongTensor(pad_c), torch.Tensor(pad_tap_flg), torch.Tensor(pad_sick_flg)
 
-def _fix_player_feat(feat, pad_id, max_c, max_g, max_h):
+def _fix_player_feat(feat, pad_idx, max_c, max_g, max_h):
     res = {}
 
     # 1, phase_len, 5
@@ -57,40 +57,40 @@ def _fix_player_feat(feat, pad_id, max_c, max_g, max_h):
     ).unsqueeze(0)
 
     # (1, phase_len, max_len ) *3
-    p_c, p_tf, p_sf = _pad_bf_creatures(feat['creatures'], pad_id, max_c) 
+    p_c, p_tf, p_sf = _pad_bf_creatures(feat['creatures'], pad_idx, max_c) 
     res["creatures"] = p_c.unsqueeze(0)
     res["tap_flg"] = p_tf.unsqueeze(0)
     res["sick_flg"] = p_sf.unsqueeze(0)
 
     # 1, phase_len, max_g
-    res["gy"] = torch.LongTensor(pad(feat['gy'], pad_id, max_g)).unsqueeze(0)
+    res["gy"] = torch.LongTensor(pad(feat['gy'], pad_idx, max_g)).unsqueeze(0)
     if "hand" in feat:
         # 1, phase_len, max_h
-        res["hand"] = torch.LongTensor(pad(feat['hand'], pad_id, max_h)).unsqueeze(0)
+        res["hand"] = torch.LongTensor(pad(feat['hand'], pad_idx, max_h)).unsqueeze(0)
 
     return res
 
-def fix_state(state, pad_id, max_c, max_g, max_h):
+def fix_state(state, pad_idx, max_c, max_g, max_h):
     res = {}
-    res["player"] = _fix_player_feat(state["player"], pad_id, max_c, max_g, max_h)
-    res["opponent"] = _fix_player_feat(state["player"], pad_id, max_c, max_g, max_h)
+    res["player"] = _fix_player_feat(state["player"], pad_idx, max_c, max_g, max_h)
+    res["opponent"] = _fix_player_feat(state["player"], pad_idx, max_c, max_g, max_h)
     res["phase"] = torch.LongTensor(state["phase"]).unsqueeze(0)
     res["playing_idx"] = torch.Tensor(state["playing_idx"]).unsqueeze(0)
 
     return res
 
-def cast_action2tensor(cardid):
-    return torch.LongTensor([cardid])
+def cast_action2tensor(cardidx):
+    return torch.LongTensor([cardidx])
 
-def attack_action2tensor(action, pad_id, max_c):
-    return torch.LongTensor(pad(action, pad_id, max_c))
+def attack_action2tensor(action, pad_idx, max_c):
+    return torch.LongTensor(pad(action, pad_idx, max_c))
 
-def block_action2tensor(action, pad_id, max_c):
+def block_action2tensor(action, pad_idx, max_c):
     attackers = torch.LongTensor(
-        utils.pad(action["attackers"], pad_id, max_c) # max_c
+        utils.pad(action["attackers"], pad_idx, max_c) # max_c
         )
     blockers = torch.LongTensor(
-        list(map(lambda x:pad(x, pad_id, max_c), action["blockers"])) # max_c, max_c
+        list(map(lambda x:pad(x, pad_idx, max_c), action["blockers"])) # max_c, max_c
         )
     return (attackers, blockers)
 

@@ -143,7 +143,7 @@ class FeatureHolder(object):
 #
 # 1-action in game -> ReplayMemory.push(...)
 class ReplayMemory(object):
-    def __init__(self, capacity, max_c = 20, max_h = 10, max_g = 60, pad_id = 0):
+    def __init__(self, capacity, max_c = 20, max_h = 10, max_g = 60, pad_idx = 0):
         '''
         max_c : max len(battle_field.creatures)
         max_h : max len(hand)
@@ -156,7 +156,7 @@ class ReplayMemory(object):
         self.max_c = max_c
         self.max_h = max_h
         self.max_g = max_g
-        self.pad_id = pad_id
+        self.pad_idx = pad_idx
 
     def push(self, state, state_phase, action, nextstate, 
                         nextstate_phase, reward, possible_actions):
@@ -174,19 +174,19 @@ class ReplayMemory(object):
         if phase in [MAIN1, MAIN2]:
             action = utils.cast_action2tensor(action)
         elif phase == ATTACK:
-            action = utils.attack_action2tensor(action, self.pad_id, self.max_c)
+            action = utils.attack_action2tensor(action, self.pad_idx, self.max_c)
         else:#block
-            action = utils.block_action2tensor(action, self.pad_id, self.max_c)
+            action = utils.block_action2tensor(action, self.pad_idx, self.max_c)
         return action
             
     def _fix_trainsition(self, state, state_phase, action, nextstate, 
                         nextstate_phase, reward, possible_actions):
         if state is not None:
-            state = utils.fix_state(state, self.pad_id, self.max_c, self.max_g, self.max_h)
+            state = utils.fix_state(state, self.pad_idx, self.max_c, self.max_g, self.max_h)
         if action is not None:
             action = self._fix_action(action, state_phase)
         if nextstate is not None:
-            nextstate = utils.fix_state(nextstate, self.pad_id, self.max_c, self.max_g, self.max_h)
+            nextstate = utils.fix_state(nextstate, self.pad_idx, self.max_c, self.max_g, self.max_h)
         if possible_actions is not None:
             possible_actions = list(map(lambda x: self._fix_action(x, nextstate_phase), possible_actions))
 
@@ -198,10 +198,10 @@ class ReplayMemory(object):
 
 
 class ReplayController(object):
-    def __init__(self, capacity, max_c = 20, max_h = 10, max_g = 60, pad_id = 0):
-        self.cast_memory = ReplayMemory(capacity, max_c, max_h, max_g, pad_id)
-        self.attack_memory = ReplayMemory(capacity, max_c, max_h, max_g, pad_id)
-        self.block_memory = ReplayMemory(capacity, max_c, max_h, max_g, pad_id)
+    def __init__(self, capacity, max_c = 20, max_h = 10, max_g = 60, pad_idx = 0):
+        self.cast_memory = ReplayMemory(capacity, max_c, max_h, max_g, pad_idx)
+        self.attack_memory = ReplayMemory(capacity, max_c, max_h, max_g, pad_idx)
+        self.block_memory = ReplayMemory(capacity, max_c, max_h, max_g, pad_idx)
 
     def push(self, *args):
         state_phase = args[1]

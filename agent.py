@@ -25,7 +25,7 @@ def _expand_state_tensor(state_tensor_dict, l):
 
 class Agent(Player):
     def __init__(self, id, deck, cast_module, attack_module, block_module, 
-                max_c = 20, max_h = 10, max_g = 60, pad_id = 0,
+                max_c = 20, max_h = 10, max_g = 60, pad_idx = 0,
                 logger=logging):
         super(Agent, self).__init__(id, deck ,logger)
         self.cast_module = cast_module
@@ -35,7 +35,7 @@ class Agent(Player):
         self.max_c = max_c
         self.max_h = max_h
         self.max_g = max_g
-        self.pad_id = pad_id
+        self.pad_idx = pad_idx
 
     def train(self):
         self.cast_module.train()
@@ -58,7 +58,7 @@ class Agent(Player):
 
     def cast_action(self, env, state, card_indexes):
         # select action
-        state_tensor_dict = utils.fix_state(state, self.pad_id, self.max_c, self.max_g, self.max_h)
+        state_tensor_dict = utils.fix_state(state, self.pad_idx, self.max_c, self.max_g, self.max_h)
         action_tensors = list(map(lambda x: utils.cast_action2tensor(x), card_indexes))
         card_idx, _ = self.select_cast_action(state_tensor_dict, action_tensors)
 
@@ -82,18 +82,17 @@ class Agent(Player):
 
     def attack_action(self, env, state, attackers_list):
         # select action
-        state_tensor_dict = utils.fix_state(state, self.pad_id, self.max_c, self.max_g, self.max_h)
+        state_tensor_dict = utils.fix_state(state, self.pad_idx, self.max_c, self.max_g, self.max_h)
         action_tensors = list(map(lambda x: utils.attack_action2tensor(x), attackers_list))
         attackers_tensor, _ = self.select_attack_action(state_tensor_dict, action_tensors)
 
         # idx -> id -> card -> attack
         attacker_ids = []
         for card_idx in attackers_tensor.view(-1):
-            card_id = env.idx2cardid[int(card_idx)]
-            if card_id == self.pad_id:
+            if int(card_idx) == self.pad_idx:
                 break
-            else:
-                attacker_ids.append(card_id)
+            card_id = env.idx2cardid[int(card_idx)]
+            attacker_ids.append(card_id)
         attackable_cards = self.battlefield.get_attackable_creatures()
 
         attack_card = utils.cardids2cards(attacker_ids, attackable_cards)
@@ -102,6 +101,9 @@ class Agent(Player):
         return state, attack_card
 
 # TODO check id/index of action
+# utils attack_action2tensor
+# pad_id is indx/id
+# env cardid2idx, idx2cardid "pad_idは必要？"
 
 class DummyAgent(Player):
     pass
